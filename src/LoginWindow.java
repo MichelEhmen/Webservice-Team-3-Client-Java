@@ -1,0 +1,83 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+/**
+ * Created by michelehmen on 25.06.16.
+ */
+public class LoginWindow extends AppWindow{
+    JTextField fldUserId;
+    JPasswordField fldPassword;
+    JButton btnLogin;
+
+    public LoginWindow(){
+        super();
+        GridBagLayout gridBagLayout = new GridBagLayout();
+        gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
+        gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE};
+        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+        getContentPane().setLayout(gridBagLayout);
+
+        JLabel lblBitteGebenSie = new JLabel("Bitte geben Sie ihre Daten ein");
+        GridBagConstraints gbc_lblBitteGebenSie = new GridBagConstraints();
+        gbc_lblBitteGebenSie.insets = new Insets(0, 0, 5, 5);
+        gbc_lblBitteGebenSie.gridx = 3;
+        gbc_lblBitteGebenSie.gridy = 2;
+        getContentPane().add(lblBitteGebenSie, gbc_lblBitteGebenSie);
+
+        JLabel lblUserid = new JLabel("User-ID:");
+        GridBagConstraints gbc_lblUserid = new GridBagConstraints();
+        gbc_lblUserid.anchor = GridBagConstraints.EAST;
+        gbc_lblUserid.insets = new Insets(0, 0, 5, 5);
+        gbc_lblUserid.gridx = 1;
+        gbc_lblUserid.gridy = 3;
+        getContentPane().add(lblUserid, gbc_lblUserid);
+
+        fldUserId = new JTextField();
+        GridBagConstraints gbc_fldUserId = new GridBagConstraints();
+        gbc_fldUserId.insets = new Insets(0, 0, 5, 5);
+        gbc_fldUserId.fill = GridBagConstraints.HORIZONTAL;
+        gbc_fldUserId.gridx = 3;
+        gbc_fldUserId.gridy = 3;
+        getContentPane().add(fldUserId, gbc_fldUserId);
+        fldUserId.setColumns(10);
+
+        JLabel lblPasswort = new JLabel("Passwort:");
+        GridBagConstraints gbc_lblPasswort = new GridBagConstraints();
+        gbc_lblPasswort.insets = new Insets(0, 0, 5, 5);
+        gbc_lblPasswort.gridx = 1;
+        gbc_lblPasswort.gridy = 5;
+        getContentPane().add(lblPasswort, gbc_lblPasswort);
+
+        fldPassword = new JPasswordField();
+        GridBagConstraints gbc_fldPassword = new GridBagConstraints();
+        gbc_fldPassword.insets = new Insets(0, 0, 5, 5);
+        gbc_fldPassword.fill = GridBagConstraints.HORIZONTAL;
+        gbc_fldPassword.gridx = 3;
+        gbc_fldPassword.gridy = 5;
+        getContentPane().add(fldPassword, gbc_fldPassword);
+
+        btnLogin = new JButton("Login");
+        GridBagConstraints gbc_btnLogin = new GridBagConstraints();
+        gbc_btnLogin.insets = new Insets(0, 0, 0, 5);
+        gbc_btnLogin.gridx = 3;
+        gbc_btnLogin.gridy = 7;
+        getContentPane().add(btnLogin, gbc_btnLogin);
+
+        initButtons();
+        this.setVisible(true);
+    }
+
+    public void initButtons() {
+
+        btnLogin.addActionListener(new NewFrameActionListener(this){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                this.dispose();
+                new MessageWindow(fldUserId.getText());
+            }
+        });
+    }
+}
