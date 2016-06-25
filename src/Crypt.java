@@ -30,12 +30,12 @@ public class Crypt {
 
 	public static void main(String[] args) throws Exception {
 //		testJceWorkingCorrectly();
-		generateKeyPair();
-//		generateSalt();
-//		generateMasterkey("123456");
+//		generateKeyPair();
+		generateSalt();
+		generateMasterkey("123456");
 //		encryptPrivateKey(privateKeyUser, masterkey);
 //		decryptPrivateKey(privateKeyUserEnc, masterkey);
-		createInnerEnvelope("PeterZwegat", "Hallo, wie geht es dir?");
+//		createInnerEnvelope("PeterZwegat", "Hallo, wie geht es dir?");
 	}
 
 	public static void testJceWorkingCorrectly() throws NoSuchAlgorithmException {
