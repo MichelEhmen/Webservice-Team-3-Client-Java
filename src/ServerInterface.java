@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+import java.security.Timestamp;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -10,8 +11,122 @@ import org.json.*;
  */
 public class ServerInterface {
     Crypt c = new Crypt();
+    String id;
+    String pubKey;
+    String privateKey;
 
-    public boolean login(String id, String passwort) throws Exception {
+    public boolean login(String id, String password) throws Exception {
+
+        JSONObject json = getUser(id);
+
+        String salt = json.getString("saltmaster");
+        String pubKey = json.getString("pubkey"); //wozu?
+        String privKeyEnc = json.getString("privkeyenc");
+
+        String masterKey = c.generateMasterkey(password, salt);
+
+        try {
+            privateKey = c.decryptPrivateKey(privKeyEnc, masterKey);
+        }catch(Exception e){
+            return false;
+        }
+//        System.out.println(json);
+//        String salt = json.getString("saltmaster");
+        this.id = id;
+        return true;
+    }
+
+    public int register(String id, String password) throws Exception {
+
+        URL url = new URL("http://127.0.0.1:3000/" + id);
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("POST");
+
+        c.generateKeyPair();
+        String privateKey = c.getPrivateKeyString();
+        byte[] salt = c.generateSalt();
+        String masterKey = c.generateMasterkey(password, salt);
+        String publicKey = c.getPublicKeyString();
+
+        Map<String,Object> params = new LinkedHashMap<>();
+        params.put("saltMaster", salt);
+        params.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
+        params.put("pubKey", publicKey);
+
+        StringBuilder postData = generatePostData(params);
+        byte[] postDataBytes = postData.toString().getBytes();
+
+        httpCon.getOutputStream().write(postDataBytes);
+        int returnCode = httpCon.getResponseCode();
+        httpCon.disconnect();
+        return returnCode;
+    }
+
+    public int sendMessage(String targetID, String message) throws Exception {
+
+        JSONObject recipient = getUser(targetID);
+        String pubKeyRecipient = recipient.getString("pubKey");
+
+        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("POST");
+
+        String keyRecipient = c.generateKeyRecipient();
+        String iv = c.generateIv();
+        String cipher = c.encryptMessage(message, keyRecipient, iv);
+        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+
+        String sigRecipient = c.hashSigRecipient(privateKey, id, cipher, iv, keyRecipient);
+        JSONObject innerEnvelope = new JSONObject();
+        innerEnvelope.put("userID", id);
+        innerEnvelope.put("cipher", cipher);
+        innerEnvelope.put("iv", iv);
+        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
+        innerEnvelope.put("sigRecipient", sigRecipient);
+        long timestamp = System.currentTimeMillis()/1000L
+
+        String sigService = c.hashSigService(privateKey, targetID, timestamp, innerEnvelope);
+
+        Map<String,Object> params = new LinkedHashMap<>();
+        params.put("userID", id);
+        params.put("cipher", cipher);
+        params.put("iv", iv);
+        params.put("keyRecEnc", keyRecipientEnc);
+        params.put("sigRecipient", sigRecipient);
+        params.put("timeStamp", timestamp);
+        params.put("targetID", targetID);
+        params.put("sigService", sigService);
+
+        StringBuilder postData = generatePostData(params);
+        byte[] postDataBytes = postData.toString().getBytes();
+
+        httpCon.getOutputStream().write(postDataBytes);
+        int returnCode = httpCon.getResponseCode();
+        httpCon.disconnect();
+        return returnCode;
+    }
+
+    public String[] receiveMessages() throws Exception{
+        StringBuilder result = new StringBuilder();
+        URL url = new URL("http://127.0.0.1:3000/" + id + "message");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        //Paremeter übergeben timestamp sigService
+
+        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String line;
+        while ((line = rd.readLine()) != null) {
+            result.append(line);
+        }
+        rd.close();
+        JSONObject json = new JSONObject(result.toString());
+        //JSON prüfen und zum Array wandeln
+        return messages;
+    }
+
+    public JSONObject getUser(String id) throws Exception{
         StringBuilder result = new StringBuilder();
         URL url = new URL("http://127.0.0.1:3000/" + id);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -23,35 +138,10 @@ public class ServerInterface {
         }
         rd.close();
         JSONObject json = new JSONObject(result.toString());
-
-        String salt = json.getString("saltmaster");
-        String pubKey = json.getString("pubkey");
-        String privKeyEnc = json.getString("privkeyenc");
-
-
-//        System.out.println(json);
-//        String salt = json.getString("saltmaster");
-        return false;
+        return json;
     }
 
-    public int register(String id, String passwort) throws Exception {
-
-        URL url = new URL("http://127.0.0.1:3000/" + id);
-        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        httpCon.setDoOutput(true);
-        httpCon.setRequestMethod("POST");
-
-        c.generateKeyPair();
-        String privateKey = c.getPrivateKeyString();
-        byte[] salt = c.generateSalt();
-        String masterKey = c.generateMasterkey(passwort, salt);
-        String publicKey = c.getPublicKeyString();
-
-        Map<String,Object> params = new LinkedHashMap<>();
-        params.put("saltMaster", salt);
-        params.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
-        params.put("pubKey", publicKey);
-
+    public StringBuilder generatePostData(Map<String,Object> params) throws Exception{
         StringBuilder postData = new StringBuilder();
         for (Map.Entry<String,Object> param : params.entrySet()) {
             if (postData.length() != 0) postData.append('&');
@@ -59,11 +149,6 @@ public class ServerInterface {
             postData.append('=');
             postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
         }
-        byte[] postDataBytes = postData.toString().getBytes();
-
-        httpCon.getOutputStream().write(postDataBytes);
-        int returnCode = httpCon.getResponseCode();
-        httpCon.disconnect();
-        return returnCode;
+        return  postData;
     }
 }

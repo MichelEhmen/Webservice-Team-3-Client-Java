@@ -86,7 +86,7 @@ public class LoginWindow extends AppWindow{
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.login(fldUserId.getText(), "test")) {
+                    if(server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         this.dispose();
                         new MessageWindow(fldUserId.getText());
                     }

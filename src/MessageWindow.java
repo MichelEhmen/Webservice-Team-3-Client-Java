@@ -49,6 +49,14 @@ public class MessageWindow extends AppWindow {
         getContentPane().add(fldRecipientId, gbc_fldRecipientId);
         fldRecipientId.setColumns(10);
 
+        JLabel lblEingeloggtMitId = new JLabel("Eingeloggt mit ID:");
+        GridBagConstraints gbc_lblEingeloggtMitId = new GridBagConstraints();
+        gbc_lblEingeloggtMitId.anchor = GridBagConstraints.SOUTH;
+        gbc_lblEingeloggtMitId.insets = new Insets(0, 0, 5, 5);
+        gbc_lblEingeloggtMitId.gridx = 0;
+        gbc_lblEingeloggtMitId.gridy = 1;
+        getContentPane().add(lblEingeloggtMitId, gbc_lblEingeloggtMitId);
+
         JLabel lblNachricht = new JLabel("Nachricht:");
         GridBagConstraints gbc_lblNachricht = new GridBagConstraints();
         gbc_lblNachricht.anchor = GridBagConstraints.EAST;
@@ -65,6 +73,13 @@ public class MessageWindow extends AppWindow {
         gbc_textField.gridy = 1;
         getContentPane().add(textField, gbc_textField);
         textField.setColumns(10);
+
+        JLabel lblId = new JLabel(userID);
+        GridBagConstraints gbc_lblId = new GridBagConstraints();
+        gbc_lblId.insets = new Insets(0, 0, 5, 5);
+        gbc_lblId.gridx = 0;
+        gbc_lblId.gridy = 2;
+        getContentPane().add(lblId, gbc_lblId);
 
         btnAbsenden = new JButton("Absenden");
         GridBagConstraints gbc_btnAbsenden = new GridBagConstraints();
@@ -89,7 +104,6 @@ public class MessageWindow extends AppWindow {
         gbc_scrollPane.gridy = 3;
         getContentPane().add(scrollPane, gbc_scrollPane);
 
-//        getJson(userID);
         initButtons();
         this.setVisible(true);
     }

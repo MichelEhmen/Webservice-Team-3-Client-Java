@@ -7,6 +7,7 @@ public class RegisterWindow extends AppWindow{
     JPasswordField fldPassword;
     JButton btnRegister;
     ServerInterface server;
+    JButton btnZurck;
 
     public RegisterWindow(){
         super();
@@ -18,6 +19,13 @@ public class RegisterWindow extends AppWindow{
         gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE};
         gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         getContentPane().setLayout(gridBagLayout);
+
+        btnZurck = new JButton("Zurück");
+        GridBagConstraints gbc_btnZurck = new GridBagConstraints();
+        gbc_btnZurck.insets = new Insets(0, 0, 5, 5);
+        gbc_btnZurck.gridx = 0;
+        gbc_btnZurck.gridy = 0;
+        getContentPane().add(btnZurck, gbc_btnZurck);
 
         JLabel lblBitteGebenSie = new JLabel("Bitte geben Sie ihre Daten ein");
         GridBagConstraints gbc_lblBitteGebenSie = new GridBagConstraints();
@@ -73,11 +81,22 @@ public class RegisterWindow extends AppWindow{
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    server.register(fldUserId.getText(), "bla");
-                    System.out.println("Registriert");
+                    if(server.register(fldUserId.getText(), String.valueOf(fldPassword.getPassword())) == 201){
+                        JOptionPane.showMessageDialog(null, "Die Registrierung war erfolgreich");
+                    }else{
+                        JOptionPane.showMessageDialog(null, "Die Registrierung war nicht erfolgreich");
+                    }
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
+            }
+        });
+
+        btnZurck.addActionListener(new NewFrameActionListener(this) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                this.dispose();
+                new ChoiceWindow();
             }
         });
     }
