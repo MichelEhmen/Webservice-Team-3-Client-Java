@@ -1,18 +1,17 @@
 import javax.swing.*;
- import java.awt.*;
- import java.awt.event.ActionEvent;
+import java.awt.*;
+import java.awt.event.ActionEvent;
 
-public class RegisterWindow extends AppWindow {
-      
+public class RegisterWindow extends AppWindow{
     JTextField fldUserId;
-     
     JPasswordField fldPassword;
-     
     JButton btnRegister;
-      
+    ServerInterface server;
 
-    public RegisterWindow() { 
+    public RegisterWindow(){
         super();
+        server = new ServerInterface();
+
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
         gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -59,7 +58,7 @@ public class RegisterWindow extends AppWindow {
         gbc_fldPassword.gridy = 5;
         getContentPane().add(fldPassword, gbc_fldPassword);
 
-        btnRegister = new JButton("Login");
+        btnRegister = new JButton("Registrieren");
         GridBagConstraints gbc_btnRegister = new GridBagConstraints();
         gbc_btnRegister.insets = new Insets(0, 0, 0, 5);
         gbc_btnRegister.gridx = 3;
@@ -69,17 +68,17 @@ public class RegisterWindow extends AppWindow {
         initButtons();
         this.setVisible(true);
     }
-
-    public void initButtons() {
-
-        btnRegister.addActionListener(new NewFrameActionListener(this){
+    public void initButtons(){
+        btnRegister.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                this.dispose();
-                new MessageWindow(fldUserId.getText());
+                try {
+                    server.register(fldUserId.getText(), "bla");
+                    System.out.println("Registriert");
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
             }
         });
     }
-
-      
-} 
+}

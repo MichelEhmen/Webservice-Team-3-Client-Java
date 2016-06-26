@@ -26,8 +26,13 @@ public class ServerInterface {
         return salt;
     }
 
-    public void register(int id, String passwort) throws Exception { 
+    public int register(String id, String passwort) throws Exception {
+
         URL url = new URL("http://127.0.0.1:3000/" + id);
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("POST");
+
         Map<String,Object> params = new LinkedHashMap<>();
         params.put("saltMaster", "58793");
         params.put("privKeyEnc", "589230459");
@@ -40,20 +45,11 @@ public class ServerInterface {
             postData.append('=');
             postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
         }
-        byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+        byte[] postDataBytes = postData.toString().getBytes();
 
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
-        conn.setDoOutput(true);
-        conn.getOutputStream().write(postDataBytes);
-
-//        Reader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-//
-//        for (int c; (c = in.read()) >= 0;)
-//            System.out.print((char)c);
+        httpCon.getOutputStream().write(postDataBytes);
+        int returnCode = httpCon.getResponseCode();
+        httpCon.disconnect();
+        return returnCode;
     }
-
-     
 }
