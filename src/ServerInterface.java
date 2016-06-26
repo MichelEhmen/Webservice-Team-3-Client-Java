@@ -1,7 +1,5 @@
 import java.net.*;
 import java.io.*;
-import java.security.Timestamp;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -47,12 +45,12 @@ public class ServerInterface {
 
         c.generateKeyPair();
         String privateKey = c.getPrivateKeyString();
-        byte[] salt = c.generateSalt();
-        String masterKey = c.generateMasterkey(password, salt);
+        String saltmaster = c.generateSaltmaster();
+        String masterKey = c.generateMasterkey(password, saltmaster);
         String publicKey = c.getPublicKeyString();
 
         Map<String,Object> params = new LinkedHashMap<>();
-        params.put("saltMaster", salt);
+        params.put("saltMaster", saltmaster);
         params.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
         params.put("pubKey", publicKey);
 

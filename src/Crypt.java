@@ -21,7 +21,7 @@ public class Crypt {
 		System.out.println(privkeyst);
 		PublicKey pubk = c.getPublicKey();
 		PrivateKey prik = c.getPrivateKey();
-		String s = c.generateSalt();
+		String s = c.generateSaltmaster();
 		String mk = c.generateMasterkey("123456", s);
 		String privkeyenc = c.encryptPrivateKey(privkeyst, mk);
 		System.out.println(c.decryptPrivateKey(privkeyenc, mk));
@@ -35,7 +35,6 @@ public class Crypt {
 		System.out.println(krd);
 		String sr = c.hashSigRecipient("Daniel",em, iv, ekr, privkeyst);
 
-
 	}
 
 	public void testJceWorkingCorrectly() throws Exception {
@@ -45,11 +44,11 @@ public class Crypt {
 		// funktioniert korrekt
 	}
 
-	public String generateSalt() throws Exception {
-		byte[] saltBytes = new byte[64];
-		RANDOM.nextBytes(saltBytes);
-		String salt = toHex(saltBytes);
-		return salt;
+	public String generateSaltmaster() throws Exception {
+		byte[] saltmasterBytes = new byte[64];
+		RANDOM.nextBytes(saltmasterBytes);
+		String saltmaster = toHex(saltmasterBytes);
+		return saltmaster;
 	}
 
 	public String generateKeyRecipient() throws Exception {
@@ -66,12 +65,12 @@ public class Crypt {
 		return iv;
 	}
 
-	public String generateMasterkey(String password, String salt) throws Exception {
+	public String generateMasterkey(String password, String saltmaster) throws Exception {
 		int iterations = 10000;
 		char[] chars = password.toCharArray();
-		byte[] saltBytes = hexStringToByteArray(salt);
+		byte[] saltmasterBytes = hexStringToByteArray(saltmaster);
 
-		PBEKeySpec spec = new PBEKeySpec(chars, saltBytes, iterations, 128);
+		PBEKeySpec spec = new PBEKeySpec(chars, saltmasterBytes, iterations, 128);
 		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
 		byte[] hash = skf.generateSecret(spec).getEncoded();
 
@@ -87,7 +86,6 @@ public class Crypt {
 
 	public String getPublicKeyString() {
 		byte[] pubKey = kPair.getPublic().getEncoded();
-
 
 		StringBuffer retStringPublic = new StringBuffer();
 		for (int i = 0; i < pubKey.length; ++i) {
@@ -214,7 +212,7 @@ public class Crypt {
 		return sigRecipient;
 
 	}
-	
+
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
 	public String hashSigService(String toUser, Timestamp timestamp, String innerEnvelope, String privateKey) throws Exception {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
