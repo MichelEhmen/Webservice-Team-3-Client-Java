@@ -1,16 +1,6 @@
-
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Base64;
-import java.util.Random;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -18,64 +8,86 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypt {
 
-	private static final Random RANDOM = new SecureRandom();
+	private static final SecureRandom RANDOM = new SecureRandom();
 
-	private static KeyPair kPair;
+	private KeyPair kPair;
+
 
 	public static void main(String[] args) throws Exception {
-		// testJceWorkingCorrectly();
-		// generateKeyPair();
-		// getPrivateKey();
-		// PublicKey pk = getPublicKey();
-		// generateSalt();
-		// generateMasterkey("123456");
-		// encryptPrivateKey(privateKeyUser, masterkey);
-		// decryptPrivateKey(privateKeyUserEnc, masterkey);
-		// String kr = generateKeyRecipient();
-		// String iv = generateIv();
-		// byte[] em = encryptMessage("Hallo, wie geht es denn so?", kr, iv);
-		// decryptMessage(em, kr, iv);
-		// byte[] ekr = encryptKeyRecipient(kr, pk);
-		// decryptKeyRecipient(ekr, pk);
+		Crypt c = new Crypt();
+		// c.testJceWorkingCorrectly();
+		c.generateKeyPair();
+		String privkeyst = c.getPrivateKeyString();
+		System.out.println(privkeyst);
+		PublicKey pubk = c.getPublicKey();
+		PrivateKey prik = c.getPrivateKey();
+		String s = c.generateSalt();
+		String mk = c.generateMasterkey("123456", s);
+		String privkeyenc = c.encryptPrivateKey(privkeyst, mk);
+		System.out.println(c.decryptPrivateKey(privkeyenc, mk));
+		String kr = c.generateKeyRecipient();
+		System.out.println(kr);
+		String iv = c.generateIv();
+		String em = c.encryptMessage("Hallo, wie geht es denn so?", kr, iv);
+		System.out.println(c.decryptMessage(em, kr, iv));
+		String ekr = c.encryptKeyRecipient(kr, pubk);
+		String krd = c.decryptKeyRecipient(ekr, prik);
+		System.out.println(krd);
+		String sr = c.hashSigRecipient("Daniel",em, iv, ekr, privkeyst);
 
 
 	}
 
-	public static void testJceWorkingCorrectly() throws NoSuchAlgorithmException {
+	public void testJceWorkingCorrectly() throws Exception {
 		int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
 		System.out.println(maxKeyLen);
 		// Ergebnis: 128 funktioniert nicht korrekt, Ergebnis: 2147483647
 		// funktioniert korrekt
-		// https://ubuntuincident.wordpress.com/2011/04/14/install-the-java-cryptography-extension-jce/
-
 	}
 
-	public static byte[] generateSalt() {
-		byte[] salt = new byte[64];
-		RANDOM.nextBytes(salt);
+	public String generateSalt() throws Exception {
+		byte[] saltBytes = new byte[64];
+		RANDOM.nextBytes(saltBytes);
+		String salt = toHex(saltBytes);
 		return salt;
 	}
 
-	private static String generateMasterkey(String password, byte[] salt) throws Exception {
-		int iterations = 10000;
-		char[] chars = password.toCharArray();
-
-		PBEKeySpec spec = new PBEKeySpec(chars, salt, iterations, 128);
-		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-		byte[] hash = skf.generateSecret(spec).getEncoded();
-		return toHex(hash);
-
+	public String generateKeyRecipient() throws Exception {
+		byte[] keyRecipientBytes = new byte[16];
+		RANDOM.nextBytes(keyRecipientBytes);
+		String keyRecipient = toHex(keyRecipientBytes);
+		return keyRecipient;
 	}
 
-	public static void generateKeyPair() throws Exception {
+	public String generateIv() throws Exception {
+		byte[] ivBytes = new byte[16];
+		RANDOM.nextBytes(ivBytes);
+		String iv = toHex(ivBytes);
+		return iv;
+	}
+
+	public String generateMasterkey(String password, String salt) throws Exception {
+		int iterations = 10000;
+		char[] chars = password.toCharArray();
+		byte[] saltBytes = hexStringToByteArray(salt);
+
+		PBEKeySpec spec = new PBEKeySpec(chars, saltBytes, iterations, 128);
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+		byte[] hash = skf.generateSecret(spec).getEncoded();
+
+		return toHex(hash);
+	}
+
+	public void generateKeyPair() throws Exception {
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
 		keyGen.initialize(2048);
 		KeyPair pair = keyGen.generateKeyPair();
 		kPair = pair;
 	}
 
-	public static String getPublicKeyString() {
+	public String getPublicKeyString() {
 		byte[] pubKey = kPair.getPublic().getEncoded();
+
 
 		StringBuffer retStringPublic = new StringBuffer();
 		for (int i = 0; i < pubKey.length; ++i) {
@@ -86,7 +98,7 @@ public class Crypt {
 
 	}
 
-	public static String getPrivateKeyString() {
+	public String getPrivateKeyString() {
 		byte[] privKey = kPair.getPrivate().getEncoded();
 
 		StringBuffer retStringPrivate = new StringBuffer();
@@ -97,110 +109,123 @@ public class Crypt {
 		return privateKeyString;
 	}
 
-	public static PublicKey getPublicKey() {
+	public PublicKey getPublicKey() {
 		PublicKey publicKey = kPair.getPublic();
 		return publicKey;
 
 	}
 
-	public static PrivateKey getPrivateKey() {
+	public PrivateKey getPrivateKey() {
 		PrivateKey privateKey = kPair.getPrivate();
 		return privateKey;
 	}
 
-	public static byte[] encryptPrivateKey(String privateKey, String masterkey) throws Exception {
+	public String encryptPrivateKey(String privateKey, String masterkey) throws Exception {
+		byte[] masterkeyBytes = hexStringToByteArray(masterkey);
 		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
-		SecretKeySpec key = new SecretKeySpec(masterkey.getBytes("UTF-8"), "AES");
+		SecretKeySpec key = new SecretKeySpec(masterkeyBytes, "AES");
 		cipher.init(Cipher.ENCRYPT_MODE, key);
-		byte[] privateKeyEnc = cipher.doFinal(privateKey.getBytes("UTF-8"));
+		byte[] privateKeyEncBytes= cipher.doFinal(privateKey.getBytes("UTF-8"));
+		String privateKeyEnc = toHex(privateKeyEncBytes);
 		return privateKeyEnc;
 	}
 
-	public static String decryptPrivateKey(byte[] privateKeyEnc, String newMasterkey) throws Exception {
+	public String decryptPrivateKey(String privateKeyEnc, String masterkey)
+			throws Exception {
+		byte[] masterkeyBytes = hexStringToByteArray(masterkey);
+		byte[] privateKeyEncBytes = hexStringToByteArray(privateKeyEnc);
 		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
-		SecretKeySpec key = new SecretKeySpec(newMasterkey.getBytes("UTF-8"), "AES");
+		SecretKeySpec key = new SecretKeySpec(masterkeyBytes, "AES");
 		cipher.init(Cipher.DECRYPT_MODE, key);
-		String privateKey = new String(cipher.doFinal(privateKeyEnc), "UTF-8");
+		String privateKey = new String(cipher.doFinal(privateKeyEncBytes), "UTF-8");
 		return privateKey;
 	}
 
-	public static String generateKeyRecipient() throws Exception {
-		byte[] keyRecipientBytes = new byte[10];
-		RANDOM.nextBytes(keyRecipientBytes);
-		String keyRecipient = Base64.getEncoder().encodeToString(keyRecipientBytes);
-		return keyRecipient;
+
+	public String encryptHash(byte[] hash, String privateKey) throws Exception {
+		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
+		SecretKeySpec key = new SecretKeySpec(privateKey.getBytes("UTF-8"), "AES");
+		cipher.init(Cipher.ENCRYPT_MODE, key);
+		byte[] hashEncBytes= cipher.doFinal(hash);
+		String hashEnc = toHex(hashEncBytes);
+		return hashEnc;
 	}
 
-	public static String generateIv() throws Exception {
-		byte[] ivBytes = new byte[10];
-		RANDOM.nextBytes(ivBytes);
-		String iv = Base64.getEncoder().encodeToString(ivBytes);
-		return iv;
+	public String decryptHash(String encHash, String privateKey) throws Exception {
+		byte[] HashEncBytes = hexStringToByteArray(encHash);
+		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
+		SecretKeySpec key = new SecretKeySpec(privateKey.getBytes("UTF-8"), "AES");
+		cipher.init(Cipher.DECRYPT_MODE, key);
+		String hashEnc = new String(cipher.doFinal(HashEncBytes), "UTF-8");
+		return hashEnc;
 	}
 
-	public static byte[] encryptMessage(String message, String keyRecipient, String iv) throws Exception {
+
+	public String encryptMessage(String message, String keyRecipient, String iv) throws Exception {
+		byte[] keyRecipientBytes = hexStringToByteArray(keyRecipient);
+		byte[] ivBytes = hexStringToByteArray(iv);
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
-		SecretKeySpec key = new SecretKeySpec(keyRecipient.getBytes("UTF-8"), "AES");
-		cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv.getBytes("UTF-8")));
-		byte[] encryptedMessage = cipher.doFinal(message.getBytes("UTF-8"));
+		SecretKeySpec key = new SecretKeySpec(keyRecipientBytes, "AES");
+		cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(ivBytes));
+		byte[] encryptedMessageBytes = cipher.doFinal(message.getBytes("UTF-8"));
+		String encryptedMessage = toHex(encryptedMessageBytes);
 		return encryptedMessage;
 	}
 
-	public static String decryptMessage(byte[] encryptedMessage, String keyRecipient, String iv) throws Exception {
+	public String decryptMessage(String encryptedMessage, String keyRecipient, String iv) throws Exception {
+		byte[] keyRecipientBytes = hexStringToByteArray(keyRecipient);
+		byte[] ivBytes = hexStringToByteArray(iv);
+		byte[] encryptedMessageByte = hexStringToByteArray(encryptedMessage);
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
-		SecretKeySpec key = new SecretKeySpec(keyRecipient.getBytes("UTF-8"), "AES");
-		cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv.getBytes("UTF-8")));
-		String message = new String(cipher.doFinal(encryptedMessage), "UTF-8");
-		System.out.println(message);
+		SecretKeySpec key = new SecretKeySpec(keyRecipientBytes, "AES");
+		cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(ivBytes));
+		String message = new String(cipher.doFinal(encryptedMessageByte), "UTF-8");
 		return message;
 	}
 
-	public static byte[] encryptKeyRecipient(String keyRecipient, PublicKey publicKey) throws Exception {
+	public String encryptKeyRecipient(String keyRecipient, PublicKey publicKey) throws Exception {
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-		byte[] keyRecipientEnc = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
-		System.out.println(Base64.getEncoder().encodeToString(keyRecipientEnc));
+		byte[] keyRecipientEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
+		String keyRecipientEnc = toHex(keyRecipientEncBytes);
 		return keyRecipientEnc;
 	}
 
-	// funktioniert leider noch nicht so richtig :-/
-	public static String decryptKeyRecipient(byte[] keyRecipientEnc, PublicKey publicKey) throws Exception {
+	public String decryptKeyRecipient(String keyRecipientEnc, PrivateKey privateKey) throws Exception {
+		byte[] keyRecipientEncBytes = hexStringToByteArray(keyRecipientEnc);
 		Cipher cipher = Cipher.getInstance("RSA");
-		cipher.init(Cipher.DECRYPT_MODE, publicKey);
-		String keyRecipient = new String(cipher.doFinal(keyRecipientEnc), "UTF-8");
-		System.out.println(keyRecipient);
+		cipher.init(Cipher.DECRYPT_MODE, privateKey);
+		String keyRecipient = new String(cipher.doFinal(keyRecipientEncBytes), "UTF-8");
 		return keyRecipient;
 	}
 
-	// Noch nicht ganz richtig -> Zitat kryptospec: Die Anwendung bildet eine
-	// digitale Signatur sig_recipient mit Hilfe von SHA-256 und privkey_user
-	// über Identität, Cipher, iv und key_recipient_enc.
-	// Verstehe nicht wirklich, wie ich das einbauen soll xD
-	public static String hashSigRecipient(String fromUser, String cipher, String iv, String keyRecipientEnc)
+	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKey)
 			throws Exception {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		String partData = fromUser + cipher + iv + keyRecipientEnc;
+		String partData = fromUser + encryptedMessage + iv + keyRecipientEnc;
 		md.update(partData.getBytes("UTF-8"));
 		byte[] sigRecipientBytes = md.digest();
-		String sigRecipient = Base64.getEncoder().encodeToString(sigRecipientBytes);
+
+		String sigRecipient = toHex(sigRecipientBytes);
+		//String sigRecipient = encryptHash(sigRecipientBytes, privateKey);
+
 		return sigRecipient;
 
 	}
 
-	// Noch nicht ganz richtig -> Zitat kryptospec: Die Anwendung bildet eine
-	// digitale Signatur sig_service mit Hilfe von SHA-256 und privkey_user über
-	// innerer Umschlag, timestamp, Empfänger.
-	// Verstehe nicht wirklich, wie ich das einbauen soll xD
-	public static String hashSigService(String toUser, Timestamp timestamp, String innerEnvelope) throws Exception {
+	public String hashSigService(String toUser, Timestamp timestamp, String innerEnvelope, String privateKey) throws Exception {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		String partData = toUser + timestamp + innerEnvelope;
 		md.update(partData.getBytes("UTF-8"));
-		byte[] sigRecipientBytes = md.digest();
-		String sigRecipient = Base64.getEncoder().encodeToString(sigRecipientBytes);
-		return sigRecipient;
+		byte[] sigServiceBytes = md.digest();
+
+		String sigService = toHex(sigServiceBytes);
+		//String sigService = encryptHash(sigServiceBytes, privateKey);
+
+		return sigService;
 	}
 
-	// Hilfsmethode bei der PBKDF2 Funktion - nicht weiter beachten
+	// ab hier Hilfsmethoden
 	private static String toHex(byte[] array) throws Exception {
 		BigInteger bi = new BigInteger(1, array);
 		String hex = bi.toString(16);
@@ -210,6 +235,16 @@ public class Crypt {
 		} else {
 			return hex;
 		}
+	}
+
+	public static byte[] hexStringToByteArray(String s) {
+		int len = s.length();
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+					+ Character.digit(s.charAt(i+1), 16));
+		}
+		return data;
 	}
 
 }
