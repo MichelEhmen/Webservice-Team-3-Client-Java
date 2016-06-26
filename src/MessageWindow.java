@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
 /**
  * Created by michelehmen on 25.06.16.
@@ -14,7 +15,7 @@ public class MessageWindow extends AppWindow {
     private JTextField textField;
 
 
-    public MessageWindow(String userID){
+    public MessageWindow(String userID) throws Exception {
         super();
         server = new ServerInterface();
 
@@ -95,7 +96,8 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        JScrollPane scrollPane = new JScrollPane();
+        JList<Message> messages= new JList(server.receiveMessages());
+        JScrollPane scrollPane = new JScrollPane(messages);
         GridBagConstraints gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
         gbc_scrollPane.gridwidth = 2;
