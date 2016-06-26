@@ -56,7 +56,7 @@ public class Crypt {
 		return salt;
 	}
 
-	private static String generateMasterkey(String password, byte[] salt) throws Exception {
+	public static String generateMasterkey(String password, byte[] salt) throws Exception {
 		int iterations = 10000;
 		char[] chars = password.toCharArray();
 

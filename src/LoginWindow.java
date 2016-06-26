@@ -15,6 +15,7 @@ public class LoginWindow extends AppWindow{
 
     public LoginWindow(){
         super();
+        server = new ServerInterface();
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
         gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -84,8 +85,14 @@ public class LoginWindow extends AppWindow{
         btnLogin.addActionListener(new NewFrameActionListener(this){
             @Override
             public void actionPerformed(ActionEvent e) {
-                this.dispose();
-                new MessageWindow(fldUserId.getText());
+                try {
+                    if(server.login(fldUserId.getText(), "test")) {
+                        this.dispose();
+                        new MessageWindow(fldUserId.getText());
+                    }
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
             }
         });
 

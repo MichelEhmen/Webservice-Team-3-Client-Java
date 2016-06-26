@@ -104,7 +104,7 @@ public class MessageWindow extends AppWindow {
     }
     public void getJson(String id){
         try {
-            lblJson.setText(server.login(id));
+            lblJson.setText(server.login(id, "test")+"");
         } catch (Exception e) {
             e.printStackTrace();
         }

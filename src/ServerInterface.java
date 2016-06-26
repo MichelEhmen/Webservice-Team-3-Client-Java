@@ -9,7 +9,9 @@ import org.json.*;
  * Created by michelehmen on 25.06.16.
  */
 public class ServerInterface {
-    public String login(String id) throws Exception {
+    Crypt c = new Crypt();
+
+    public boolean login(String id, String passwort) throws Exception {
         StringBuilder result = new StringBuilder();
         URL url = new URL("http://127.0.0.1:3000/" + id);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -21,9 +23,15 @@ public class ServerInterface {
         }
         rd.close();
         JSONObject json = new JSONObject(result.toString());
-        System.out.println(json);
+
         String salt = json.getString("saltmaster");
-        return salt;
+        String pubKey = json.getString("pubkey");
+        String privKeyEnc = json.getString("privkeyenc");
+
+
+//        System.out.println(json);
+//        String salt = json.getString("saltmaster");
+        return false;
     }
 
     public int register(String id, String passwort) throws Exception {
@@ -33,10 +41,16 @@ public class ServerInterface {
         httpCon.setDoOutput(true);
         httpCon.setRequestMethod("POST");
 
+        c.generateKeyPair();
+        String privateKey = c.getPrivateKeyString();
+        byte[] salt = c.generateSalt();
+        String masterKey = c.generateMasterkey(passwort, salt);
+        String publicKey = c.getPublicKeyString();
+
         Map<String,Object> params = new LinkedHashMap<>();
-        params.put("saltMaster", "58793");
-        params.put("privKeyEnc", "589230459");
-        params.put("pubKey", "2834752");
+        params.put("saltMaster", salt);
+        params.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
+        params.put("pubKey", publicKey);
 
         StringBuilder postData = new StringBuilder();
         for (Map.Entry<String,Object> param : params.entrySet()) {
