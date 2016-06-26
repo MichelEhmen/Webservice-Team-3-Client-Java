@@ -184,6 +184,7 @@ public class Crypt {
 	}
 
 	public String encryptKeyRecipient(String keyRecipient, PublicKey publicKey) throws Exception {
+		//byte[] keyRecipientBytes = hexStringToByteArray(keyRecipient);
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 		byte[] keyRecipientEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
@@ -199,6 +200,7 @@ public class Crypt {
 		return keyRecipient;
 	}
 
+	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
 	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKey)
 			throws Exception {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -212,7 +214,8 @@ public class Crypt {
 		return sigRecipient;
 
 	}
-
+	
+	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
 	public String hashSigService(String toUser, Timestamp timestamp, String innerEnvelope, String privateKey) throws Exception {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		String partData = toUser + timestamp + innerEnvelope;
