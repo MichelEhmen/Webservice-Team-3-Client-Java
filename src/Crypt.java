@@ -23,23 +23,23 @@ public class Crypt {
 		c.generateKeyPair();
 		String privkeyst = c.getPrivateKeyString();
 		String pubkeyst = c.getPublicKeyString();
-//		System.out.println(privkeyst);
-//		String s = c.generateSaltmaster();
-//		System.out.println(s);
-//		String mk = c.generateMasterkey("ads", s);
-//		String privkeyenc = c.encryptPrivateKey(privkeyst, mk);
-//		System.out.println(c.decryptPrivateKey(privkeyenc, mk));
+    	System.out.println(privkeyst);
+	    String s = c.generateSaltmaster();
+		System.out.println(s);
+		String mk = c.generateMasterkey("ads", s);
+		String privkeyenc = c.encryptPrivateKey(privkeyst, mk);
+		System.out.println(c.decryptPrivateKey(privkeyenc, mk));
 		String kr = c.generateKeyRecipient();
 		System.out.println(kr);
-//		String iv = c.generateIv();
-//		System.out.println(iv);
-//		String em = c.encryptMessage("Hallo, wie geht es denn so?", kr, iv);
-//		System.out.println(c.decryptMessage(em, kr, iv));
+		String iv = c.generateIv();
+		System.out.println(iv);
+	    String em = c.encryptMessage("Hallo, wie geht es denn so?", kr, iv);
+		System.out.println(c.decryptMessage(em, kr, iv));
 		String ekr = c.encryptCipherRSA(kr, pubkeyst);
 		System.out.println(ekr);
 		String krd = c.decryptCipherRSA(ekr, privkeyst);
 		System.out.println(krd);
-//		String sr = c.hashSigRecipient("Daniel",em, iv, ekr, privkeyst);
+		String sr = c.hashSigRecipient("Daniel",em, iv, ekr, pubkeyst);
 
 	}
 
@@ -188,26 +188,26 @@ public class Crypt {
 	}
 
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKeyString)
+	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String publicKeyString)
 			throws Exception {
 
 		String data = fromUser + encryptedMessage + iv + keyRecipientEnc;
 
 		String hashData = hashSHA256(data);
 
-		String encryptedHash = encryptCipherRSA(hashData, privateKeyString);
+		String encryptedHash = encryptCipherRSA(hashData, publicKeyString);
 
 		return encryptedHash;
 	}
 
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKeyString) throws Exception {
+	public String hashSigService(String toUser, long timestamp, JSONObject innerEnvelope, String publicKeyString) throws Exception {
 
 		String data = toUser + timestamp + innerEnvelope;
 
 		String hashData = hashSHA256(data);
 
-		String encryptedHash = encryptCipherRSA(hashData, privateKeyString);
+		String encryptedHash = encryptCipherRSA(hashData, publicKeyString);
 
 		return encryptedHash;
 
