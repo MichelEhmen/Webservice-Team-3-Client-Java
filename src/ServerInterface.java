@@ -42,10 +42,10 @@ public class ServerInterface {
         httpCon.setRequestMethod("POST");
 
         c.generateKeyPair();
-        String privateKey = c.getPrivateKeyString();
+        String privateKey = c.getPrivateKey();
         String saltmaster = c.generateSaltmaster();
         String masterKey = c.generateMasterkey(password, saltmaster);
-        String publicKey = c.getPublicKeyString();
+        String publicKey = c.getPublicKey();
 
         Map<String,Object> params = new LinkedHashMap<>();
         params.put("saltMaster", saltmaster);
@@ -102,8 +102,8 @@ public class ServerInterface {
         String iv = c.generateIv();
 //        String cipher = c.encryptMessage(message, keyRecipient, iv);
 //        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
-//        String sigRecipient = c.hashSigRecipient(id, cipher, iv, keyRecipientEnc, privateKey);
-//        String sigService = c.hashSigService(targetID, timestamp, innerEnvelope, privateKey);
+//        String sigRecipient = c.hashAndEncryptSigRecipient(privateKey, id, cipher, iv, keyRecipient);
+//        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
         long timestamp = System.currentTimeMillis()/1000L;
         String mockCipher = message;
         String mockKeyRecipientEnc = "324232342";
