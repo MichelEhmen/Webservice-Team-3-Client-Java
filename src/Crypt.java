@@ -1,6 +1,4 @@
 import org.json.JSONObject;
-import sun.misc.BASE64Encoder;
-
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -10,8 +8,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.*;
-
+import java.util.Base64;
 
 public class Crypt {
 
@@ -25,9 +22,10 @@ public class Crypt {
 		// c.testJceWorkingCorrectly();
 		c.generateKeyPair();
 //        c.getPublicKey();
-		String privkeyst = c.getPrivateKeyHexString();
+		String privkeyst = c.getPrivateKeyString();
 		String pubkeyst = c.getPublicKeyString();
-    	System.out.println(privkeyst);
+        System.out.println(pubkeyst);
+        System.out.println(privkeyst);
 	    String s = c.generateSaltmaster();
 		System.out.println(s);
 		String mk = c.generateMasterkey("ads", s);
@@ -56,34 +54,35 @@ public class Crypt {
 	public String generateSaltmaster() throws Exception {
 		byte[] saltmasterBytes = new byte[64];
 		RANDOM.nextBytes(saltmasterBytes);
-		String saltmaster = toHex(saltmasterBytes);
+		String saltmaster = Base64.getEncoder().encodeToString(saltmasterBytes);
 		return saltmaster;
 	}
 
 	public String generateKeyRecipient() throws Exception {
 		byte[] keyRecipientBytes = new byte[16];
 		RANDOM.nextBytes(keyRecipientBytes);
-		String keyRecipient = toHex(keyRecipientBytes);
+		String keyRecipient = Base64.getEncoder().encodeToString(keyRecipientBytes);
 		return keyRecipient;
 	}
 
 	public String generateIv() throws Exception {
 		byte[] ivBytes = new byte[16];
 		RANDOM.nextBytes(ivBytes);
-		String iv = toHex(ivBytes);
+		String iv = Base64.getEncoder().encodeToString(ivBytes);
 		return iv;
 	}
 
 	public String generateMasterkey(String password, String saltmaster) throws Exception {
 		int iterations = 10000;
 		char[] chars = password.toCharArray();
-		byte[] saltmasterBytes = hexStringToByteArray(saltmaster);
+		byte[] saltmasterBytes = Base64.getDecoder().decode(saltmaster);
 
 		PBEKeySpec spec = new PBEKeySpec(chars, saltmasterBytes, iterations, 128);
 		SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-		byte[] hash = skf.generateSecret(spec).getEncoded();
 
-		return toHex(hash);
+		byte[] masterkeyBytes = skf.generateSecret(spec).getEncoded();
+        String masterkey = Base64.getEncoder().encodeToString(masterkeyBytes);
+		return masterkey;
 	}
 
 	public void generateKeyPair() throws Exception {
@@ -95,43 +94,33 @@ public class Crypt {
 
 	public String getPublicKeyString() throws Exception {
 		byte[] pubKey = kPair.getPublic().getEncoded();
-		String publicKeyString = toHex(pubKey);
+		String publicKeyString = Base64.getEncoder().encodeToString(pubKey);
 		return publicKeyString;
 
 	}
 
-	public String getPrivateKeyHexString() throws Exception {
+	public String getPrivateKeyString() throws Exception {
 		byte[] privKey = kPair.getPrivate().getEncoded();
-		String privateKeyString = toHex(privKey);
+		String privateKeyString = Base64.getEncoder().encodeToString(privKey);
 
 		return privateKeyString;
 	}
 
-	public PublicKey getPublicKeyPem() {
-		PublicKey publicKey = kPair.getPublic();
-		return publicKey;
-
-	}
-
-	public PrivateKey getPrivajavteKeyPem() {
-		PrivateKey privateKey = kPair.getPrivate();
-		return privateKey;
-	}
-
 	public String encryptPrivateKey(String privateKey, String masterkey) throws Exception {
-		byte[] masterkeyBytes = hexStringToByteArray(masterkey);
+		byte[] masterkeyBytes = Base64.getDecoder().decode(masterkey);
+        //byte[] privatKeyBytes = Base64.getDecoder().decode(privateKey);
 		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
 		SecretKeySpec key = new SecretKeySpec(masterkeyBytes, "AES");
 		cipher.init(Cipher.ENCRYPT_MODE, key);
 		byte[] privateKeyEncBytes= cipher.doFinal(privateKey.getBytes("UTF-8"));
-		String privateKeyEnc = toHex(privateKeyEncBytes);
+		String privateKeyEnc = Base64.getEncoder().encodeToString(privateKeyEncBytes);
 		return privateKeyEnc;
 	}
 
 	public String decryptPrivateKey(String privateKeyEnc, String masterkey)
 			throws Exception {
-		byte[] masterkeyBytes = hexStringToByteArray(masterkey);
-		byte[] privateKeyEncBytes = hexStringToByteArray(privateKeyEnc);
+		byte[] masterkeyBytes = Base64.getDecoder().decode(masterkey);
+		byte[] privateKeyEncBytes = Base64.getDecoder().decode(privateKeyEnc);
 		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
 		SecretKeySpec key = new SecretKeySpec(masterkeyBytes, "AES");
 		cipher.init(Cipher.DECRYPT_MODE, key);
@@ -140,20 +129,20 @@ public class Crypt {
 	}
 
 	public String encryptMessage(String message, String keyRecipient, String iv) throws Exception {
-		byte[] keyRecipientBytes = hexStringToByteArray(keyRecipient);
-		byte[] ivBytes = hexStringToByteArray(iv);
+		byte[] keyRecipientBytes = Base64.getDecoder().decode(keyRecipient);
+		byte[] ivBytes = Base64.getDecoder().decode(iv);
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
 		SecretKeySpec key = new SecretKeySpec(keyRecipientBytes, "AES");
 		cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(ivBytes));
 		byte[] encryptedMessageBytes = cipher.doFinal(message.getBytes("UTF-8"));
-		String encryptedMessage = toHex(encryptedMessageBytes);
+		String encryptedMessage = Base64.getEncoder().encodeToString(encryptedMessageBytes);
 		return encryptedMessage;
 	}
 
 	public String decryptMessage(String encryptedMessage, String keyRecipient, String iv) throws Exception {
-		byte[] keyRecipientBytes = hexStringToByteArray(keyRecipient);
-		byte[] ivBytes = hexStringToByteArray(iv);
-		byte[] encryptedMessageByte = hexStringToByteArray(encryptedMessage);
+		byte[] keyRecipientBytes = Base64.getDecoder().decode(keyRecipient);
+		byte[] ivBytes = Base64.getDecoder().decode(iv);
+		byte[] encryptedMessageByte = Base64.getDecoder().decode(encryptedMessage);
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
 		SecretKeySpec key = new SecretKeySpec(keyRecipientBytes, "AES");
 		cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(ivBytes));
@@ -162,7 +151,7 @@ public class Crypt {
 	}
 
 	public String encryptKeyRecipient(String keyRecipient, String publicKeyString) throws Exception {
-		byte[] publicBytes = hexStringToByteArray(publicKeyString);
+		byte[] publicBytes = java.util.Base64.getDecoder().decode(publicKeyString);
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 		PublicKey publicKey = keyFactory.generatePublic(keySpec);
@@ -172,17 +161,17 @@ public class Crypt {
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 		byte[] contentEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
-		String contentEnc = toHex(contentEncBytes);
+		String contentEnc = Base64.getEncoder().encodeToString(contentEncBytes);
 		return contentEnc;
 	}
 
 	public String decryptKeyRecipient(String encKeyRecipient, String privateKeyString) throws Exception {
-		byte[] privateBytes = hexStringToByteArray(privateKeyString);
+		byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKeyString);
 		PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 		PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
-		byte[] contentBytes = hexStringToByteArray(encKeyRecipient);
+		byte[] contentBytes = Base64.getDecoder().decode(encKeyRecipient);
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.DECRYPT_MODE, privateKey);
 		String content = new String(cipher.doFinal(contentBytes), "UTF-8");
@@ -192,7 +181,7 @@ public class Crypt {
 
 	public String hashAndEncryptSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKeyString)
 			throws Exception {
-        byte[] privateBytes = hexStringToByteArray(privateKeyString);
+        byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKeyString);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
@@ -203,8 +192,7 @@ public class Crypt {
         sig.initSign(privateKey);
         sig.update(dataBytes);
         byte[] signatureBytes = sig.sign();
-        System.out.println("==="+signatureBytes.length);
-        String encryptedHash = toHex(signatureBytes);
+        String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
 
 
 		return encryptedHash;
@@ -214,7 +202,7 @@ public class Crypt {
 
 	public String hashAndEncryptSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKeyString) throws Exception {
 
-        byte[] privateBytes = hexStringToByteArray(privateKeyString);
+        byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKeyString);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
@@ -226,31 +214,10 @@ public class Crypt {
         sig.update(dataBytes);
         byte[] signatureBytes = sig.sign();
 
-        String encryptedHash = toHex(signatureBytes);
+        String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
 
         return encryptedHash;
     }
 
-	// ab hier Hilfsmethoden
-	private static String toHex(byte[] array) throws Exception {
-		BigInteger bi = new BigInteger(1, array);
-		String hex = bi.toString(16);
-		int paddingLength = (array.length * 2) - hex.length();
-		if (paddingLength > 0) {
-			return String.format("%0" + paddingLength + "d", 0) + hex;
-		} else {
-			return hex;
-		}
-	}
-
-	public static byte[] hexStringToByteArray(String s) {
-		int len = s.length();
-		byte[] data = new byte[len / 2];
-		for (int i = 0; i < len; i += 2) {
-			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-					+ Character.digit(s.charAt(i+1), 16));
-		}
-		return data;
-	}
 
 }
