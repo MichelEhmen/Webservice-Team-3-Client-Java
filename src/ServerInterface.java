@@ -74,9 +74,9 @@ public class ServerInterface {
         String keyRecipient = c.generateKeyRecipient();
         String iv = c.generateIv();
         String cipher = c.encryptMessage(message, keyRecipient, iv);
-        String keyRecipientEnc = c.encryptCipherRSA(keyRecipient, pubKeyRecipient);
+        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
 
-        String sigRecipient = c.hashSigRecipient(privateKey, id, cipher, iv, keyRecipient);
+        String sigRecipient = c.hashAndEncryptSigRecipient(privateKey, id, cipher, iv, keyRecipient);
         JSONObject innerEnvelope = new JSONObject();
         innerEnvelope.put("userID", id);
         innerEnvelope.put("cipher", cipher);
@@ -85,7 +85,7 @@ public class ServerInterface {
         innerEnvelope.put("sigRecipient", sigRecipient);
         long timestamp = System.currentTimeMillis()/1000L;
 
-        String sigService = c.hashSigService(targetID, timestamp, innerEnvelope, privateKey);
+        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
 
         Map<String,Object> params = new LinkedHashMap<>();
         params.put("userID", id);

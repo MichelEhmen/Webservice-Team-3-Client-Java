@@ -17,7 +17,7 @@ public class Crypt {
 	private KeyPair kPair;
 
 
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 		Crypt c = new Crypt();
 		// c.testJceWorkingCorrectly();
 		c.generateKeyPair();
@@ -35,12 +35,11 @@ public class Crypt {
 		System.out.println(iv);
 	    String em = c.encryptMessage("Hallo, wie geht es denn so?", kr, iv);
 		System.out.println(c.decryptMessage(em, kr, iv));
-		String ekr = c.encryptCipherRSA(kr, pubkeyst);
+		String ekr = c.encryptKeyRecipient(kr, pubkeyst);
 		System.out.println(ekr);
-		String krd = c.decryptCipherRSA(ekr, privkeyst);
+		String krd = c.decryptKeyRecipient(ekr, privkeyst);
 		System.out.println(krd);
-		String sr = c.hashSigRecipient("Daniel",em, iv, ekr, pubkeyst);
-
+		String sr = c.hashAndEncryptSigRecipient("Daniel",em, iv, ekr, privkeyst);
 	}
 
 	public void testJceWorkingCorrectly() throws Exception {
@@ -159,7 +158,7 @@ public class Crypt {
 		return message;
 	}
 
-	public String encryptCipherRSA(String content, String publicKeyString) throws Exception {
+	public String encryptKeyRecipient(String keyRecipient, String publicKeyString) throws Exception {
 		byte[] publicBytes = hexStringToByteArray(publicKeyString);
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -169,60 +168,65 @@ public class Crypt {
 
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-		byte[] contentEncBytes = cipher.doFinal(content.getBytes("UTF-8"));
+		byte[] contentEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
 		String contentEnc = toHex(contentEncBytes);
 		return contentEnc;
 	}
 
-	public String decryptCipherRSA(String encryptedContent, String privateKeyString) throws Exception {
+	public String decryptKeyRecipient(String encKeyRecipient, String privateKeyString) throws Exception {
 		byte[] privateBytes = hexStringToByteArray(privateKeyString);
 		PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 		PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
-		byte[] contentBytes = hexStringToByteArray(encryptedContent);
+		byte[] contentBytes = hexStringToByteArray(encKeyRecipient);
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.DECRYPT_MODE, privateKey);
 		String content = new String(cipher.doFinal(contentBytes), "UTF-8");
 		return content;
 	}
 
-	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String publicKeyString)
+
+	public String hashAndEncryptSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKeyString)
 			throws Exception {
+        byte[] privateBytes = hexStringToByteArray(privateKeyString);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
+        Signature sig = Signature.getInstance("SHA256WithRSA");
 		String data = fromUser + encryptedMessage + iv + keyRecipientEnc;
+        byte[] dataBytes = data.getBytes();
+        sig.initSign(privateKey);
+        sig.update(dataBytes);
+        byte[] signatureBytes = sig.sign();
 
-		String hashData = hashSHA256(data);
+        String encryptedHash = toHex(signatureBytes);
 
-		String encryptedHash = encryptCipherRSA(hashData, publicKeyString);
-
-		return encryptedHash;
-	}
-
-	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigService(String toUser, long timestamp, JSONObject innerEnvelope, String publicKeyString) throws Exception {
-
-		String data = toUser + timestamp + innerEnvelope;
-
-		String hashData = hashSHA256(data);
-
-		String encryptedHash = encryptCipherRSA(hashData, publicKeyString);
 
 		return encryptedHash;
-
 	}
 
-	public String hashSHA256(String data) throws Exception{
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		md.update(data.getBytes("UTF-8"));
-		byte[] signatureBytes = md.digest();
 
-		String signature = toHex(signatureBytes);
-		//String sigService = encryptHash(sigServiceBytes, privateKey);
+	public String hashAndEncryptSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKeyString) throws Exception {
 
-		return signature;
-	}
+        byte[] privateBytes = hexStringToByteArray(privateKeyString);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+
+        Signature sig = Signature.getInstance("SHA256WithRSA");
+        String data = toUser + timestamp + innerEnvelope;
+        byte[] dataBytes = data.getBytes();
+        sig.initSign(privateKey);
+        sig.update(dataBytes);
+        byte[] signatureBytes = sig.sign();
+
+        String encryptedHash = toHex(signatureBytes);
+
+        return encryptedHash;
+    }
+
 
 	// ab hier Hilfsmethoden
 	private static String toHex(byte[] array) throws Exception {
