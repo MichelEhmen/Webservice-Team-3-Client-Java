@@ -1,4 +1,5 @@
 import org.json.JSONObject;
+import sun.misc.BASE64Encoder;
 
 import java.math.BigInteger;
 import java.security.*;
@@ -9,6 +10,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.*;
+
 
 public class Crypt {
 
@@ -21,7 +24,8 @@ public class Crypt {
 		Crypt c = new Crypt();
 		// c.testJceWorkingCorrectly();
 		c.generateKeyPair();
-		String privkeyst = c.getPrivateKeyString();
+//        c.getPublicKey();
+		String privkeyst = c.getPrivateKeyHexString();
 		String pubkeyst = c.getPublicKeyString();
     	System.out.println(privkeyst);
 	    String s = c.generateSaltmaster();
@@ -92,25 +96,24 @@ public class Crypt {
 	public String getPublicKeyString() throws Exception {
 		byte[] pubKey = kPair.getPublic().getEncoded();
 		String publicKeyString = toHex(pubKey);
-
 		return publicKeyString;
 
 	}
 
-	public String getPrivateKeyString() throws Exception {
+	public String getPrivateKeyHexString() throws Exception {
 		byte[] privKey = kPair.getPrivate().getEncoded();
 		String privateKeyString = toHex(privKey);
 
 		return privateKeyString;
 	}
 
-	public PublicKey getPublicKey() {
+	public PublicKey getPublicKeyPem() {
 		PublicKey publicKey = kPair.getPublic();
 		return publicKey;
 
 	}
 
-	public PrivateKey getPrivateKey() {
+	public PrivateKey getPrivajavteKeyPem() {
 		PrivateKey privateKey = kPair.getPrivate();
 		return privateKey;
 	}
@@ -200,12 +203,13 @@ public class Crypt {
         sig.initSign(privateKey);
         sig.update(dataBytes);
         byte[] signatureBytes = sig.sign();
-
+        System.out.println("==="+signatureBytes.length);
         String encryptedHash = toHex(signatureBytes);
 
 
 		return encryptedHash;
 	}
+
 
 
 	public String hashAndEncryptSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKeyString) throws Exception {
@@ -226,7 +230,6 @@ public class Crypt {
 
         return encryptedHash;
     }
-
 
 	// ab hier Hilfsmethoden
 	private static String toHex(byte[] array) throws Exception {
