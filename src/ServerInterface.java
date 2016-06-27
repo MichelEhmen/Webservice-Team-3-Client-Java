@@ -15,22 +15,20 @@ public class ServerInterface {
     String privateKey;
 
     public boolean login(String id, String password) throws Exception {
-
+        //Fertig
         JSONObject json = getUser(id);
 
         String salt = json.getString("saltmaster");
         String pubKey = json.getString("pubkey"); //Nur für den Nachrichtenversandt
         String privKeyEnc = json.getString("privkeyenc");
 
-//        String masterKey = c.generateMasterkey(password, salt);
-//
-//        try {
-//            privateKey = c.decryptPrivateKey(privKeyEnc, masterKey);
-//        }catch(Exception e){
-//            return false;
-//        }
-//        System.out.println(json);
-//        String salt = json.getString("saltmaster");
+        String masterKey = c.generateMasterkey(password, salt);
+
+        try {
+            privateKey = c.decryptPrivateKey(privKeyEnc, masterKey);
+        }catch(Exception e){
+            return false;
+        }
         this.id = id;
         return true;
     }
