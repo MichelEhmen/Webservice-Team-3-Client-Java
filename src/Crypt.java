@@ -1,5 +1,8 @@
+import org.json.JSONObject;
+
 import java.math.BigInteger;
 import java.security.*;
+import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
@@ -205,29 +208,26 @@ public class Crypt {
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
 	public String hashSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKey)
 			throws Exception {
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		String partData = fromUser + encryptedMessage + iv + keyRecipientEnc;
-		md.update(partData.getBytes("UTF-8"));
-		byte[] sigRecipientBytes = md.digest();
-
-		String sigRecipient = toHex(sigRecipientBytes);
-		//String sigRecipient = encryptHash(sigRecipientBytes, privateKey);
-
-		return sigRecipient;
-
+		return hashAll(partData);
 	}
 
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigService(String toUser, Timestamp timestamp, String innerEnvelope, String privateKey) throws Exception {
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
+	public String hashSigService(String toUser, Timestamp timestamp, JSONObject innerEnvelope, String privateKey) throws Exception {
 		String partData = toUser + timestamp + innerEnvelope;
-		md.update(partData.getBytes("UTF-8"));
-		byte[] sigServiceBytes = md.digest();
+		return hashAll(partData);
 
-		String sigService = toHex(sigServiceBytes);
+	}
+
+	public String hashAll(String partData) throws Exception{
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		md.update(partData.getBytes("UTF-8"));
+		byte[] signatureBytes = md.digest();
+
+		String signature = toHex(signatureBytes);
 		//String sigService = encryptHash(sigServiceBytes, privateKey);
 
-		return sigService;
+		return signature;
 	}
 
 	// ab hier Hilfsmethoden

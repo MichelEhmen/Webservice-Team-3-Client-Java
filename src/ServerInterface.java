@@ -61,50 +61,50 @@ public class ServerInterface {
         return returnCode;
     }
 
-//    public int sendMessage(String targetID, String message) throws Exception {
+    public int sendMessage(String targetID, String message) throws Exception {
 
-//        JSONObject recipient = getUser(targetID);
-//        String pubKeyRecipient = recipient.getString("pubKey");
-//
-//        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
-//        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-//        httpCon.setDoOutput(true);
-//        httpCon.setRequestMethod("POST");
-//
-//        String keyRecipient = c.generateKeyRecipient();
-//        String iv = c.generateIv();
-//        String cipher = c.encryptMessage(message, keyRecipient, iv);
-//        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
-//
-//        String sigRecipient = c.hashSigRecipient(privateKey, id, cipher, iv, keyRecipient);
-//        JSONObject innerEnvelope = new JSONObject();
-//        innerEnvelope.put("userID", id);
-//        innerEnvelope.put("cipher", cipher);
-//        innerEnvelope.put("iv", iv);
-//        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
-//        innerEnvelope.put("sigRecipient", sigRecipient);
-//        long timestamp = System.currentTimeMillis()/1000L
-//
-//        String sigService = c.hashSigService(privateKey, targetID, timestamp, innerEnvelope);
-//
-//        Map<String,Object> params = new LinkedHashMap<>();
-//        params.put("userID", id);
-//        params.put("cipher", cipher);
-//        params.put("iv", iv);
-//        params.put("keyRecEnc", keyRecipientEnc);
-//        params.put("sigRecipient", sigRecipient);
-//        params.put("timeStamp", timestamp);
-//        params.put("targetID", targetID);
-//        params.put("sigService", sigService);
-//
-//        StringBuilder postData = generatePostData(params);
-//        byte[] postDataBytes = postData.toString().getBytes();
-//
-//        httpCon.getOutputStream().write(postDataBytes);
-//        int returnCode = httpCon.getResponseCode();
-//        httpCon.disconnect();
-//        return returnCode;
-//    }
+        JSONObject recipient = getUser(targetID);
+        String pubKeyRecipient = recipient.getString("pubKey");
+
+        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("POST");
+
+        String keyRecipient = c.generateKeyRecipient();
+        String iv = c.generateIv();
+        String cipher = c.encryptMessage(message, keyRecipient, iv);
+        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+
+        String sigRecipient = c.hashSigRecipient(privateKey, id, cipher, iv, keyRecipient);
+        JSONObject innerEnvelope = new JSONObject();
+        innerEnvelope.put("userID", id);
+        innerEnvelope.put("cipher", cipher);
+        innerEnvelope.put("iv", iv);
+        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
+        innerEnvelope.put("sigRecipient", sigRecipient);
+        long timestamp = System.currentTimeMillis()/1000L;
+
+        String sigService = c.hashSigService(privateKey, targetID, timestamp, innerEnvelope);
+
+        Map<String,Object> params = new LinkedHashMap<>();
+        params.put("userID", id);
+        params.put("cipher", cipher);
+        params.put("iv", iv);
+        params.put("keyRecEnc", keyRecipientEnc);
+        params.put("sigRecipient", sigRecipient);
+        params.put("timeStamp", timestamp);
+        params.put("targetID", targetID);
+        params.put("sigService", sigService);
+
+        StringBuilder postData = generatePostData(params);
+        byte[] postDataBytes = postData.toString().getBytes();
+
+        httpCon.getOutputStream().write(postDataBytes);
+        int returnCode = httpCon.getResponseCode();
+        httpCon.disconnect();
+        return returnCode;
+    }
 
     public String[] receiveMessages() throws Exception{
 //        StringBuilder result = new StringBuilder();
