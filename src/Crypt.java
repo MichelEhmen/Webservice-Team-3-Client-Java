@@ -213,7 +213,7 @@ public class Crypt {
 	}
 
 	//privateKey können nicht als Schlüssel für AES Encryption verwendet werden - zu groß
-	public String hashSigService(String toUser, Timestamp timestamp, JSONObject innerEnvelope, String privateKey) throws Exception {
+	public String hashSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKey) throws Exception {
 		String partData = toUser + timestamp + innerEnvelope;
 		return hashAll(partData);
 

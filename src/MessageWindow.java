@@ -13,11 +13,13 @@ public class MessageWindow extends AppWindow {
     JButton btnAusloggen;
     private JTextField fldRecipientId;
     private JTextField textField;
+    String userID;
 
 
     public MessageWindow(String userID) throws Exception {
         super();
         server = new ServerInterface();
+        this.userID = userID;
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0, 0};
@@ -96,7 +98,7 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        JList<Message> messages= new JList(server.receiveMessages());
+        JList<Message> messages= new JList(server.receiveMessages(userID));
         JScrollPane scrollPane = new JScrollPane(messages);
         GridBagConstraints gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
@@ -115,6 +117,20 @@ public class MessageWindow extends AppWindow {
             public void actionPerformed(ActionEvent e) {
                 dispose();
                 new LoginWindow();
+            }
+        });
+        btnAbsenden.addActionListener(new NewFrameActionListener(this) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText()) == 200){
+                        JOptionPane.showMessageDialog(null, "Die Nachricht wurde abgeschickt.");
+                    }else{
+                        JOptionPane.showMessageDialog(null, "Die Nachricht konnte nicht abgeschickt werden.");
+                    }
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
             }
         });
     }

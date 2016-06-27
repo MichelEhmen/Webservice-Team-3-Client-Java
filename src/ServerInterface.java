@@ -61,79 +61,116 @@ public class ServerInterface {
         return returnCode;
     }
 
-    public int sendMessage(String targetID, String message) throws Exception {
-
-        JSONObject recipient = getUser(targetID);
-        String pubKeyRecipient = recipient.getString("pubKey");
-
-        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
+    public int register2(String id, String password)throws Exception{
+        URL url = new URL("http://127.0.0.1:3000/" + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
         httpCon.setRequestMethod("POST");
+        httpCon.setRequestProperty("Content-Type", "application/json");
+        httpCon.setRequestProperty("Accept", "application/json");
 
-        String keyRecipient = c.generateKeyRecipient();
-        String iv = c.generateIv();
-        String cipher = c.encryptMessage(message, keyRecipient, iv);
-        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+        c.generateKeyPair();
+        String privateKey = c.getPrivateKeyString();
+        String saltmaster = c.generateSaltmaster();
+        String masterKey = c.generateMasterkey(password, saltmaster);
+        String publicKey = c.getPublicKeyString();
 
-        String sigRecipient = c.hashSigRecipient(privateKey, id, cipher, iv, keyRecipient);
-        JSONObject innerEnvelope = new JSONObject();
-        innerEnvelope.put("userID", id);
-        innerEnvelope.put("cipher", cipher);
-        innerEnvelope.put("iv", iv);
-        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
-        innerEnvelope.put("sigRecipient", sigRecipient);
-        long timestamp = System.currentTimeMillis()/1000L;
-
-        String sigService = c.hashSigService(privateKey, targetID, timestamp, innerEnvelope);
-
-        Map<String,Object> params = new LinkedHashMap<>();
-        params.put("userID", id);
-        params.put("cipher", cipher);
-        params.put("iv", iv);
-        params.put("keyRecEnc", keyRecipientEnc);
-        params.put("sigRecipient", sigRecipient);
-        params.put("timeStamp", timestamp);
-        params.put("targetID", targetID);
-        params.put("sigService", sigService);
-
-        StringBuilder postData = generatePostData(params);
-        byte[] postDataBytes = postData.toString().getBytes();
-
-        httpCon.getOutputStream().write(postDataBytes);
+        JSONObject user = new JSONObject();
+        user.put("saltMaster", saltmaster);
+        user.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
+        user.put("pubKey", publicKey);
+        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+        wr.write(user.toString());
+        wr.flush();
         int returnCode = httpCon.getResponseCode();
         httpCon.disconnect();
         return returnCode;
     }
 
-    public String[] receiveMessages() throws Exception{
-//        StringBuilder result = new StringBuilder();
-//        URL url = new URL("http://127.0.0.1:3000/" + id + "message");
-//        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//        conn.setRequestMethod("GET");
-//        //Paremeter übergeben timestamp sigService
+    public int sendMessage(String id, String targetID, String message) throws Exception {
+//        JSONObject recipient = getUser(targetID);
+//        String pubKeyRecipient = recipient.getString("pubKey");
+
+        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("POST");
+        httpCon.setRequestProperty("Content-Type", "application/json");
+        httpCon.setRequestProperty("Accept", "application/json");
+
+        String keyRecipient = c.generateKeyRecipient();
+        String iv = c.generateIv();
+//        String cipher = c.encryptMessage(message, keyRecipient, iv);
+//        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+//        String sigRecipient = c.hashSigRecipient(id, cipher, iv, keyRecipientEnc, privateKey);
+//        String sigService = c.hashSigService(targetID, timestamp, innerEnvelope, privateKey);
+        long timestamp = System.currentTimeMillis()/1000L;
+        String mockCipher = message;
+        String mockKeyRecipientEnc = "324232342";
+        String mockSigRec = "0287548243";
+        String mockSigService = "2zd203d";
+
+        JSONObject messageJs = new JSONObject();
+        messageJs.put("targetUserID", targetID);
+        messageJs.put("cipher", mockCipher);
+        messageJs.put("iv", iv);
+        messageJs.put("keyRecEnc", mockKeyRecipientEnc);
+        messageJs.put("sigRec", mockSigRec);
+        messageJs.put("sigService", mockSigService);
+        messageJs.put("timestamp", timestamp);
+
+        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+        wr.write(messageJs.toString());
+        wr.flush();
+        int returnCode = httpCon.getResponseCode();
+        httpCon.disconnect();
+        return returnCode;
+    }
+
+    public String[] receiveMessages(String id) throws Exception{
+        StringBuilder result = new StringBuilder();
+        URL url = new URL("http://127.0.0.1:3000/" + id + "/message");
+        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setDoOutput(true);
+        httpCon.setRequestMethod("GET");
+        httpCon.setRequestProperty("Content-Type", "application/json");
+        httpCon.setRequestProperty("Accept", "application/json");
+
+//        long timestamp = System.currentTimeMillis()/1000L;
+//        String sigService = c.hashSigService(id, timestamp);
 //
-//        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//        String line;
-//        while ((line = rd.readLine()) != null) {
-//            result.append(line);
+//        JSONObject messageRequest = new JSONObject();
+//        messageRequest.put("timeStamp", timestamp);
+//        messageRequest.put("sigService", sigService);
+//        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+//        wr.write(messageRequest.toString());
+//        wr.flush();
+
+//        int HttpResult = httpCon.getResponseCode();
+//        if (HttpResult == HttpURLConnection.HTTP_OK) {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(httpCon.getInputStream()));
+            String line;
+            while ((line = rd.readLine()) != null) {
+                result.append(line);
+            }
+            rd.close();
+            System.out.println("" + result.toString());
+//        } else {
+//            System.out.println(httpCon.getResponseMessage());
 //        }
-//        rd.close();
-//        JSONObject json = new JSONObject(result.toString());
-//        //JSON prüfen und zum Array wandeln
-        String[] messages = new String[12];
-        messages[0]= "Hallo wie geht es dir?";
-        messages[1]= "Selfies post-ironic art party food truck chartreuse. Next level mlkshk keffiyeh locavore etsy.";
-        messages[2]= "I'm number ONE";
-        messages[3]= "Wenn du kein iPhone hast, hast du kein iPhone!";
-        messages[4]= "Hallo wie geht es dir?";
-        messages[5]= "Selfies post-ironic art party food truck chartreuse. Next level mlkshk keffiyeh locavore etsy.";
-        messages[6]= "I'm number ONE";
-        messages[7]= "Wenn du kein iPhone hast, hast du kein iPhone!";
-        messages[8]= "Hallo wie geht es dir?";
-        messages[9]= "Selfies post-ironic art party food truck chartreuse. Next level mlkshk keffiyeh locavore etsy.";
-        messages[10]= "I'm number ONE";
-        messages[11]= "Wenn du kein iPhone hast, hast du kein iPhone!";
+
+        JSONArray jsonArr = new JSONArray(result.toString());
+        String[] messages = new String[jsonArr.length()*2];
+        int jlistIndex = 0;
+        for(int i=0; i<jsonArr.length(); i++){
+            JSONObject jsonObj = jsonArr.getJSONObject(i);
+            int fromID = jsonObj.getInt("sourceuserid");
+            String cipher = jsonObj.getString("cipher");
+            messages[jlistIndex] = "Absender:" +fromID;
+            jlistIndex++;
+            messages[jlistIndex] = cipher;
+            jlistIndex++;
+        };
         return messages;
     }
 

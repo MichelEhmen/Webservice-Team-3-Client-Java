@@ -81,7 +81,7 @@ public class RegisterWindow extends AppWindow{
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.register(fldUserId.getText(), String.valueOf(fldPassword.getPassword())) == 201){
+                    if(server.register2(fldUserId.getText(), String.valueOf(fldPassword.getPassword())) == 201){
                         JOptionPane.showMessageDialog(null, "Die Registrierung war erfolgreich");
                     }else{
                         JOptionPane.showMessageDialog(null, "Die Registrierung war nicht erfolgreich");

@@ -15,5 +15,6 @@ public class AppWindow extends JFrame {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setSize(450, 300);
         this.setTitle("WebService-Team-3-Client");
+        this.setLocationRelativeTo(null);
     }
 }
