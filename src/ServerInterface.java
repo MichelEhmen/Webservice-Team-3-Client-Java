@@ -70,10 +70,10 @@ public class ServerInterface {
         httpCon.setRequestProperty("Accept", "application/json");
 
         c.generateKeyPair();
-        String privateKey = c.getPrivateKeyString();
+        String privateKey = c.getPrivateKey();
         String saltmaster = c.generateSaltmaster();
         String masterKey = c.generateMasterkey(password, saltmaster);
-        String publicKey = c.getPublicKeyString();
+        String publicKey = c.getPublicKey();
 
         JSONObject user = new JSONObject();
         user.put("saltMaster", saltmaster);
