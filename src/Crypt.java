@@ -41,7 +41,9 @@ public class Crypt {
         System.out.println(ekr);
         String krd = c.decryptKeyRecipient(ekr, privkeyst);
         System.out.println(krd);
-        String sr = c.hashAndEncryptSigRecipient("Daniel", em, iv, ekr, privkeyst);
+        String esr = c.hashAndEncryptSigRecipient("Daniel", em, iv, ekr, privkeyst);
+        System.out.println(c.decryptSigRecipient(esr, pubkeyst));
+        c.hashAndEncryptIdTime("Michel", 541, privkeyst);
     }
 
     /*
@@ -206,9 +208,9 @@ public class Crypt {
 
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] contentEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
-            String contentEnc = Base64.getEncoder().encodeToString(contentEncBytes);
-            return contentEnc;
+            byte[] keyRecipientEncBytes = cipher.doFinal(keyRecipient.getBytes("UTF-8"));
+            String keyRecipientEnc = Base64.getEncoder().encodeToString(keyRecipientEncBytes);
+            return keyRecipientEnc;
         } else {
             throw new Exception("Encrypt key recipient is not possible.");
         }
@@ -222,11 +224,11 @@ public class Crypt {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PrivateKey privKey = keyFactory.generatePrivate(keySpec);
 
-            byte[] contentBytes = Base64.getDecoder().decode(encKeyRecipient);
+            byte[] keyRecipientBytes = Base64.getDecoder().decode(encKeyRecipient);
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privKey);
-            String content = new String(cipher.doFinal(contentBytes), "UTF-8");
-            return content;
+            String keyRecipient = new String(cipher.doFinal(keyRecipientBytes), "UTF-8");
+            return keyRecipient;
         } else {
             throw new Exception("Decrypt key recipient is not possible.");
         }
@@ -260,6 +262,23 @@ public class Crypt {
         }
     }
 
+    public String decryptSigRecipient(String encSigRecipient, String publicKey) throws Exception {
+        if (encSigRecipient != null && publicKey != null) {
+            byte[] publicBytes = java.util.Base64.getDecoder().decode(publicKey);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+            byte[] keyRecipientBytes = Base64.getDecoder().decode(encSigRecipient);
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, pubKey);
+            String keyRecipient = new String(cipher.doFinal(keyRecipientBytes), "UTF-8");
+            return keyRecipient;
+        } else {
+            throw new Exception("Decrypt Sig recipient is not possible.");
+        }
+    }
+
     public String hashAndEncryptSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKey) throws Exception {
         if (toUser != null && timestamp != 0 && innerEnvelope != null && privateKey != null) {
             byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
@@ -281,6 +300,29 @@ public class Crypt {
             throw new Exception("Hash and encrypt the signature service is not possible.");
         }
     }
+
+    public String hashAndEncryptIdTime(String toUser, long timestamp, String privateKey) throws Exception {
+        if (toUser != null && timestamp != 0) {
+            byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PrivateKey privKey = keyFactory.generatePrivate(keySpec);
+
+            Signature sig = Signature.getInstance("SHA256WithRSA");
+            String data = toUser + timestamp;
+            byte[] dataBytes = data.getBytes();
+            sig.initSign(privKey);
+            sig.update(dataBytes);
+            byte[] signatureBytes = sig.sign();
+
+            String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
+
+            return encryptedHash;
+        } else {
+            throw new Exception("Hash and encrypt the user and timestamp is not possible.");
+        }
+    }
+
 
 
 }
