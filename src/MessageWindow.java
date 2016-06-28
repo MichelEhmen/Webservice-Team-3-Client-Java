@@ -10,10 +10,14 @@ public class MessageWindow extends AppWindow {
     ServerInterface server;
     JButton btnAbsenden;
     JButton btnAusloggen;
+    JButton btnAktualisieren;
     private JTextField fldRecipientId;
     private JTextField textField;
     String userID;
     String privateKey;
+    JList<Message> messages;
+    JScrollPane scrollPane;
+    GridBagConstraints gbc_scrollPane;
 
 
     public MessageWindow(String privateKey, String userID) throws Exception {
@@ -23,7 +27,7 @@ public class MessageWindow extends AppWindow {
         this.privateKey = privateKey;
 
         GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[]{0, 0, 0, 0};
+        gridBagLayout.columnWidths = new int[]{0, 104, 236, 0};
         gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 90, 0};
         gridBagLayout.columnWeights = new double[]{0.0, 1.0, 1.0, Double.MIN_VALUE};
         gridBagLayout.rowWeights = new double[]{0.0, 1.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
@@ -85,6 +89,14 @@ public class MessageWindow extends AppWindow {
         gbc_lblId.gridy = 2;
         getContentPane().add(lblId, gbc_lblId);
 
+        btnAktualisieren = new JButton("Aktualisieren");
+        GridBagConstraints gbc_btnAktualisieren = new GridBagConstraints();
+        gbc_btnAktualisieren.anchor = GridBagConstraints.SOUTHWEST;
+        gbc_btnAktualisieren.insets = new Insets(0, 0, 5, 5);
+        gbc_btnAktualisieren.gridx = 1;
+        gbc_btnAktualisieren.gridy = 2;
+        getContentPane().add(btnAktualisieren, gbc_btnAktualisieren);
+
         btnAbsenden = new JButton("Absenden");
         GridBagConstraints gbc_btnAbsenden = new GridBagConstraints();
         gbc_btnAbsenden.insets = new Insets(0, 0, 5, 0);
@@ -99,9 +111,9 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        JList<Message> messages= new JList(server.receiveMessages(userID, privateKey));
-        JScrollPane scrollPane = new JScrollPane(messages);
-        GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+        messages= new JList(server.receiveMessages(userID, privateKey));
+        scrollPane = new JScrollPane(messages);
+        gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
         gbc_scrollPane.gridwidth = 2;
         gbc_scrollPane.fill = GridBagConstraints.BOTH;
@@ -132,6 +144,22 @@ public class MessageWindow extends AppWindow {
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
+            }
+        });
+        btnAktualisieren.addActionListener(new NewFrameActionListener(this) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                getContentPane().remove(scrollPane);
+                try {
+                    messages = new JList(server.receiveMessages(userID, privateKey));
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+                scrollPane= new JScrollPane(messages);
+                getContentPane().add(scrollPane, gbc_scrollPane);
+                getContentPane().revalidate();
+                getContentPane().repaint();
             }
         });
     }
