@@ -8,18 +8,19 @@ import java.util.ArrayList;
  */
 public class MessageWindow extends AppWindow {
     ServerInterface server;
-    JLabel lblJson;
     JButton btnAbsenden;
     JButton btnAusloggen;
     private JTextField fldRecipientId;
     private JTextField textField;
     String userID;
+    String privateKey;
 
 
-    public MessageWindow(String userID) throws Exception {
+    public MessageWindow(String privateKey, String userID) throws Exception {
         super();
         server = new ServerInterface();
         this.userID = userID;
+        this.privateKey = privateKey;
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0, 0};
@@ -98,7 +99,7 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        JList<Message> messages= new JList(server.receiveMessages(userID));
+        JList<Message> messages= new JList(server.receiveMessages(userID, privateKey));
         JScrollPane scrollPane = new JScrollPane(messages);
         GridBagConstraints gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
@@ -123,7 +124,7 @@ public class MessageWindow extends AppWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText()) == 200){
+                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText(), privateKey) == 200){
                         JOptionPane.showMessageDialog(null, "Die Nachricht wurde abgeschickt.");
                     }else{
                         JOptionPane.showMessageDialog(null, "Die Nachricht konnte nicht abgeschickt werden.");
@@ -133,12 +134,5 @@ public class MessageWindow extends AppWindow {
                 }
             }
         });
-    }
-    public void getJson(String id){
-        try {
-            lblJson.setText(server.login(id, "test")+"");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

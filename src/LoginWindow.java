@@ -88,7 +88,7 @@ public class LoginWindow extends AppWindow{
                 try {
                     if(server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         this.dispose();
-                        new MessageWindow(fldUserId.getText());
+                        new MessageWindow(server.getPrivateKey(), fldUserId.getText());
                     }
                 } catch (Exception e1) {
                     e1.printStackTrace();

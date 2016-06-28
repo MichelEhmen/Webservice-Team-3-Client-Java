@@ -33,35 +33,8 @@ public class ServerInterface {
         return true;
     }
 
-    public int register(String id, String password) throws Exception {
-        //Fertig
-
-        URL url = new URL("http://127.0.0.1:3000/" + id);
-        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        httpCon.setDoOutput(true);
-        httpCon.setRequestMethod("POST");
-
-        c.generateKeyPair();
-        String privateKey = c.getPrivateKey();
-        String saltmaster = c.generateSaltmaster();
-        String masterKey = c.generateMasterkey(password, saltmaster);
-        String publicKey = c.getPublicKey();
-
-        Map<String,Object> params = new LinkedHashMap<>();
-        params.put("saltMaster", saltmaster);
-        params.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
-        params.put("pubKey", publicKey);
-
-        StringBuilder postData = generatePostData(params);
-        byte[] postDataBytes = postData.toString().getBytes();
-
-        httpCon.getOutputStream().write(postDataBytes);
-        int returnCode = httpCon.getResponseCode();
-        httpCon.disconnect();
-        return returnCode;
-    }
-
-    public int register2(String id, String password)throws Exception{
+    public int register(String id, String password)throws Exception{
+        //fertig
         URL url = new URL("http://127.0.0.1:3000/" + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
@@ -87,9 +60,10 @@ public class ServerInterface {
         return returnCode;
     }
 
-    public int sendMessage(String id, String targetID, String message) throws Exception {
-//        JSONObject recipient = getUser(targetID);
-//        String pubKeyRecipient = recipient.getString("pubKey");
+    public int sendMessage(String id, String targetID, String message, String privKey) throws Exception {
+        //fertig
+        JSONObject recipient = getUser(targetID);
+        String pubKeyRecipient = recipient.getString("pubkey");
 
         URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -98,25 +72,36 @@ public class ServerInterface {
         httpCon.setRequestProperty("Content-Type", "application/json");
         httpCon.setRequestProperty("Accept", "application/json");
 
+        long timestamp = System.currentTimeMillis()/1000L;
         String keyRecipient = c.generateKeyRecipient();
         String iv = c.generateIv();
-//        String cipher = c.encryptMessage(message, keyRecipient, iv);
-//        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
-//        String sigRecipient = c.hashAndEncryptSigRecipient(privateKey, id, cipher, iv, keyRecipient);
-//        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
-        long timestamp = System.currentTimeMillis()/1000L;
-        String mockCipher = message;
-        String mockKeyRecipientEnc = "324232342";
-        String mockSigRec = "0287548243";
-        String mockSigService = "2zd203d";
+        String cipher = c.encryptMessage(message, keyRecipient, iv);
+        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+        String sigRecipient = c.hashAndEncryptSigRecipient(id, cipher, iv, keyRecipient, privKey);
+
+        JSONObject innerEnvelope = new JSONObject();
+        innerEnvelope.put("sourceUserID", id);
+        innerEnvelope.put("cipher", cipher);
+        innerEnvelope.put("iv", iv);
+        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
+        innerEnvelope.put("sigRec", sigRecipient);
+
+
+
+        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privKey);
+
+//        String mockCipher = message;
+//        String mockKeyRecipientEnc = "324232342";
+//        String mockSigRec = "0287548243";
+//        String mockSigService = "2zd203d";
 
         JSONObject messageJs = new JSONObject();
         messageJs.put("targetUserID", targetID);
-        messageJs.put("cipher", mockCipher);
+        messageJs.put("cipher", cipher);
         messageJs.put("iv", iv);
-        messageJs.put("keyRecEnc", mockKeyRecipientEnc);
-        messageJs.put("sigRec", mockSigRec);
-        messageJs.put("sigService", mockSigService);
+        messageJs.put("keyRecEnc", keyRecipientEnc);
+        messageJs.put("sigRec", sigRecipient);
+        messageJs.put("sigService", sigService);
         messageJs.put("timestamp", timestamp);
 
         OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
@@ -127,7 +112,7 @@ public class ServerInterface {
         return returnCode;
     }
 
-    public String[] receiveMessages(String id) throws Exception{
+    public String[] receiveMessages(String id, String privKey) throws Exception{
         StringBuilder result = new StringBuilder();
         URL url = new URL("http://127.0.0.1:3000/" + id + "/message");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -165,10 +150,13 @@ public class ServerInterface {
         for(int i=0; i<jsonArr.length(); i++){
             JSONObject jsonObj = jsonArr.getJSONObject(i);
             int fromID = jsonObj.getInt("sourceuserid");
+            String iv = jsonObj.getString("iv");
             String cipher = jsonObj.getString("cipher");
+            String keyRecEnc = jsonObj.getString("keyrecenc");
+            String keyRec = c.decryptKeyRecipient(keyRecEnc,privKey);
             messages[jlistIndex] = "Absender:" +fromID;
             jlistIndex++;
-            messages[jlistIndex] = cipher;
+            messages[jlistIndex] = c.decryptMessage(cipher, keyRec, iv);
             jlistIndex++;
         };
         return messages;
@@ -189,14 +177,7 @@ public class ServerInterface {
         return json;
     }
 
-    public StringBuilder generatePostData(Map<String,Object> params) throws Exception{
-        StringBuilder postData = new StringBuilder();
-        for (Map.Entry<String,Object> param : params.entrySet()) {
-            if (postData.length() != 0) postData.append('&');
-            postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
-            postData.append('=');
-            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
-        }
-        return  postData;
+    public String getPrivateKey(){
+        return privateKey;
     }
 }
