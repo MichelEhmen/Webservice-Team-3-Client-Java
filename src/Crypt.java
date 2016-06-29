@@ -16,36 +16,6 @@ public class Crypt {
 
     private KeyPair kPair;
 
-
-    public static void main(String[] args) throws Exception {
-        Crypt c = new Crypt();
-        // c.testJceWorkingCorrectly();
-        c.generateKeyPair();
-//        c.getPublicKey();
-        String privkeyst = c.getPrivateKey();
-        String pubkeyst = c.getPublicKey();
-        System.out.println(pubkeyst);
-        System.out.println(privkeyst);
-        String s = c.generateSaltmaster();
-        System.out.println(s);
-        String mk = c.generateMasterkey("ads", s);
-        String privkeyenc = c.encryptPrivateKey(privkeyst, mk);
-        System.out.println(c.decryptPrivateKey(privkeyenc, mk));
-        String kr = c.generateKeyRecipient();
-        System.out.println(kr);
-        String iv = c.generateIv();
-        System.out.println(iv);
-        String em = c.encryptMessage("Hallo, wie geht es denn so?", kr, iv);
-        System.out.println(c.decryptMessage(em, kr, iv));
-        String ekr = c.encryptKeyRecipient(kr, pubkeyst);
-        System.out.println(ekr);
-        String krd = c.decryptKeyRecipient(ekr, privkeyst);
-        System.out.println(krd);
-        String esr = c.hashAndEncryptSigRecipient("Daniel", em, iv, ekr, privkeyst);
-        System.out.println(c.decryptSigRecipient(esr, pubkeyst));
-        c.hashAndEncryptIdTime("Michel", 541, privkeyst);
-    }
-
     /*
     * Überprüft ob JCE (Java Cryptography Extension) richtig funktioniert.
     * Dies wird benötigt, um ein korrektes Ergebnis bei den kryptographischen Verfahren zu erhalten.
@@ -237,25 +207,17 @@ public class Crypt {
 
     /*
     * In den folgenden Methoden werden verschiedene Teile der Nachricht mit SHA256 gehasht
-    * und anschließend mit dem Private Key RSA verschlüsselt.
+    * und anschließend mit dem Private Key RSA verschlüsselt. Die Entschlüsselung von Signature Recipient
+    * findet auf dem Client statt, daher ist die entsprechende Methode ebenfalls hier zu finden.
     * Die Umkodierung geschieht über Base64.
     * */
     public String hashAndEncryptSigRecipient(String fromUser, String encryptedMessage, String iv, String keyRecipientEnc, String privateKey)
             throws Exception {
         if (fromUser != null && encryptedMessage != null && encryptedMessage != iv && keyRecipientEnc != null && privateKey != null) {
-            byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PrivateKey privKey = keyFactory.generatePrivate(keySpec);
-
-            Signature sig = Signature.getInstance("SHA256WithRSA");
             String data = fromUser + encryptedMessage + iv + keyRecipientEnc;
-            byte[] dataBytes = data.getBytes();
-            sig.initSign(privKey);
-            sig.update(dataBytes);
-            byte[] signatureBytes = sig.sign();
-            String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
+            byte[] signatureBytes = hashSHA256AndRSAEncrypt(data, privateKey);
 
+            String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
             return encryptedHash;
         } else {
             throw new Exception("Hash and encrypt the signature recipient is not possible.");
@@ -281,17 +243,8 @@ public class Crypt {
 
     public String hashAndEncryptSigService(String toUser, long timestamp, JSONObject innerEnvelope, String privateKey) throws Exception {
         if (toUser != null && timestamp != 0 && innerEnvelope != null && privateKey != null) {
-            byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PrivateKey privKey = keyFactory.generatePrivate(keySpec);
-
-            Signature sig = Signature.getInstance("SHA256WithRSA");
             String data = toUser + timestamp + innerEnvelope;
-            byte[] dataBytes = data.getBytes();
-            sig.initSign(privKey);
-            sig.update(dataBytes);
-            byte[] signatureBytes = sig.sign();
+            byte[] signatureBytes = hashSHA256AndRSAEncrypt(data, privateKey);
 
             String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
 
@@ -303,17 +256,9 @@ public class Crypt {
 
     public String hashAndEncryptIdTime(String toUser, long timestamp, String privateKey) throws Exception {
         if (toUser != null && timestamp != 0) {
-            byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PrivateKey privKey = keyFactory.generatePrivate(keySpec);
 
-            Signature sig = Signature.getInstance("SHA256WithRSA");
             String data = toUser + timestamp;
-            byte[] dataBytes = data.getBytes();
-            sig.initSign(privKey);
-            sig.update(dataBytes);
-            byte[] signatureBytes = sig.sign();
+            byte[] signatureBytes = hashSHA256AndRSAEncrypt(data, privateKey);
 
             String encryptedHash = Base64.getEncoder().encodeToString(signatureBytes);
 
@@ -324,5 +269,18 @@ public class Crypt {
     }
 
 
+    public byte[] hashSHA256AndRSAEncrypt(String data, String privateKey) throws Exception {
+        byte[] privateBytes = java.util.Base64.getDecoder().decode(privateKey);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PrivateKey privKey = keyFactory.generatePrivate(keySpec);
 
+        Signature sig = Signature.getInstance("SHA256WithRSA");
+        byte[] dataBytes = data.getBytes();
+        sig.initSign(privKey);
+        sig.update(dataBytes);
+        byte[] signatureBytes = sig.sign();
+
+        return signatureBytes;
+    }
 }
