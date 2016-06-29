@@ -1,23 +1,18 @@
 import java.net.*;
 import java.io.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.json.*;
 
 
 public class ServerInterface {
-    Crypt c = new Crypt();
-    String id;
-    String pubKey;
-    String privateKey;
+    private Crypt c = new Crypt();
+    private String id;
+    private String privateKey;
 
     public boolean login(String id, String password) throws Exception {
-        //Fertig
         JSONObject json = getUser(id);
 
         String salt = json.getString("saltmaster");
-        String pubKey = json.getString("pubkey"); //Nur für den Nachrichtenversandt
+        String pubKey = json.getString("pubkey"); //Nur für den Nachrichtenversandt.
         String privKeyEnc = json.getString("privkeyenc");
 
         String masterKey = c.generateMasterkey(password, salt);
@@ -32,7 +27,6 @@ public class ServerInterface {
     }
 
     public int register(String id, String password)throws Exception{
-        //fertig
         URL url = new URL("http://127.0.0.1:3000/" + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
@@ -112,26 +106,26 @@ public class ServerInterface {
 
     public String[] receiveMessages(String id, String privKey) throws Exception{
         StringBuilder result = new StringBuilder();
-        URL url = new URL("http://127.0.0.1:3000/" + id + "/message");
+        URL url = new URL("http://127.0.0.1:3000/" + id + "/messages");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
-        httpCon.setRequestMethod("GET");
+        httpCon.setRequestMethod("POST");
         httpCon.setRequestProperty("Content-Type", "application/json");
         httpCon.setRequestProperty("Accept", "application/json");
 
         long timestamp = System.currentTimeMillis()/1000L;
-//        String sigService = c.hashAndEncryptIdTime(id, timestamp, privKey);
+        String sigService = c.hashAndEncryptIdTime(id, timestamp, privKey);
 //
 //      Anfrage zum Nachrichtenabruf
-//        JSONObject messageRequest = new JSONObject();
-//        messageRequest.put("timeStamp", timestamp);
-//        messageRequest.put("sigService", sigService);
-//        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
-//        wr.write(messageRequest.toString());
-//        wr.flush();
+        JSONObject messageRequest = new JSONObject();
+        messageRequest.put("timeStamp", timestamp);
+        messageRequest.put("sigService", sigService);
+        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+        wr.write(messageRequest.toString());
+        wr.flush();
 
-//        int HttpResult = httpCon.getResponseCode();
-//        if (HttpResult == HttpURLConnection.HTTP_OK) {
+        int HttpResult = httpCon.getResponseCode();
+        if (HttpResult == HttpURLConnection.HTTP_OK) {
         //Nachrichten werden vom Server abgerufen
             BufferedReader rd = new BufferedReader(new InputStreamReader(httpCon.getInputStream()));
             String line;
@@ -140,9 +134,9 @@ public class ServerInterface {
             }
             rd.close();
             System.out.println("" + result.toString());
-//        } else {
-//            System.out.println(httpCon.getResponseMessage());
-//        }
+        } else {
+            System.out.println(httpCon.getResponseMessage());
+        }
 
         JSONArray jsonArr = new JSONArray(result.toString());
         String[] messages = new String[jsonArr.length()*3];

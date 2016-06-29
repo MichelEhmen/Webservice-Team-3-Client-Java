@@ -13,7 +13,7 @@ public class MessageWindow extends AppWindow {
     private JTextField textField;
     String userID;
     String privateKey;
-    JList<Message> messages;
+    JList<String> messages;
     JScrollPane scrollPane;
     GridBagConstraints gbc_scrollPane;
 

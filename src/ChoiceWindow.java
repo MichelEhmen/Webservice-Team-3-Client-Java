@@ -2,15 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-/**
- * Created by michelehmen on 25.06.16.
- */
 public class ChoiceWindow extends AppWindow{
-    JButton btnLogin;
-    JButton btnRegistrieren;
+    private JButton btnLogin;
+    private JButton btnRegistrieren;
 
     public ChoiceWindow(){
         super();
+        //Layout Elemente
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{90, 253, 0};
         gridBagLayout.rowHeights = new int[]{60, 16, 0, 0, 0, 0, 0};
@@ -44,6 +42,7 @@ public class ChoiceWindow extends AppWindow{
     }
 
 
+    //Den Buttons werden click-Events hinzugefügt.
     public void initButtons(){
 
         btnLogin.addActionListener(new NewFrameActionListener(this) {

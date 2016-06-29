@@ -1,7 +1,4 @@
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 
 public class AppWindow extends JFrame {
 
@@ -10,6 +7,7 @@ public class AppWindow extends JFrame {
     }
 
     public void initApplication(){
+        //Default Werte für die JFrame Elemente
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setSize(450, 300);
         this.setTitle("WebService-Team-3-Client");

@@ -1,18 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 
 public class LoginWindow extends AppWindow{
-    JTextField fldUserId;
-    JPasswordField fldPassword;
-    JButton btnLogin;
-    JButton btnZurck;
-    ServerInterface server;
+    private JTextField fldUserId;
+    private JPasswordField fldPassword;
+    private JButton btnLogin;
+    private JButton btnZurck;
+    private ServerInterface server;
 
     public LoginWindow(){
         super();
+        //Layout Elemente
         server = new ServerInterface();
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
@@ -78,15 +77,21 @@ public class LoginWindow extends AppWindow{
         this.setVisible(true);
     }
 
+    //Den Buttons werden click-Events hinzugefügt.
     public void initButtons() {
 
         btnLogin.addActionListener(new NewFrameActionListener(this){
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    //Wenn der User sich einloggen möchte, wird die Methode login()
+                    // aus der ServerInterface Klasse aufgerufen. Die Parameter
+                    // ID und Passwort werden aus den Textfeldern übernommen.
                     if(server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         this.dispose();
                         new MessageWindow(server.getPrivateKey(), fldUserId.getText());
+                    }else{
+                        JOptionPane.showMessageDialog(null, "Der Benutzer konnte nicht eingeloggt werden.");
                     }
                 } catch (Exception e1) {
                     e1.printStackTrace();

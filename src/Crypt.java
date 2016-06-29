@@ -107,7 +107,7 @@ public class Crypt {
 
     public String generateMasterkey(String password, String saltmaster) throws Exception {
         if (password != null && saltmaster != null) {
-            int iterations = 10000;
+            int iterations = 10000; //Anzahl der Iterationen, die in Kryptospec verlangt wurden
             char[] chars = password.toCharArray();
             byte[] saltmasterBytes = Base64.getDecoder().decode(saltmaster);
 
@@ -118,7 +118,7 @@ public class Crypt {
             String masterkey = Base64.getEncoder().encodeToString(masterkeyBytes);
             return masterkey;
         } else {
-            throw new Exception("Generate maseter key is not possible.");
+            throw new Exception("Generate master key is not possible.");
         }
     }
 
