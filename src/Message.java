@@ -1,6 +1,4 @@
-/**
- * Created by michelehmen on 26.06.16.
- */
+
 public class Message {
     public String id;
     public String message;

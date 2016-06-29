@@ -3,9 +3,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-/**
- * Created by michelehmen on 25.06.16.
- */
+
 public class MessageWindow extends AppWindow {
     ServerInterface server;
     JButton btnAbsenden;

@@ -3,9 +3,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-/**
- * Created by michelehmen on 25.06.16.
- */
+
 public class LoginWindow extends AppWindow{
     JTextField fldUserId;
     JPasswordField fldPassword;

@@ -5,9 +5,7 @@ import java.util.Map;
 
 import org.json.*;
 
-/**
- * Created by michelehmen on 25.06.16.
- */
+
 public class ServerInterface {
     Crypt c = new Crypt();
     String id;
@@ -121,9 +119,10 @@ public class ServerInterface {
         httpCon.setRequestProperty("Content-Type", "application/json");
         httpCon.setRequestProperty("Accept", "application/json");
 
-//        long timestamp = System.currentTimeMillis()/1000L;
-//        String sigService = c.hashSigService(id, timestamp);
+        long timestamp = System.currentTimeMillis()/1000L;
+//        String sigService = c.hashAndEncryptIdTime(id, timestamp, privKey);
 //
+//      Anfrage zum Nachrichtenabruf
 //        JSONObject messageRequest = new JSONObject();
 //        messageRequest.put("timeStamp", timestamp);
 //        messageRequest.put("sigService", sigService);
@@ -133,6 +132,7 @@ public class ServerInterface {
 
 //        int HttpResult = httpCon.getResponseCode();
 //        if (HttpResult == HttpURLConnection.HTTP_OK) {
+        //Nachrichten werden vom Server abgerufen
             BufferedReader rd = new BufferedReader(new InputStreamReader(httpCon.getInputStream()));
             String line;
             while ((line = rd.readLine()) != null) {
@@ -145,19 +145,33 @@ public class ServerInterface {
 //        }
 
         JSONArray jsonArr = new JSONArray(result.toString());
-        String[] messages = new String[jsonArr.length()*2];
+        String[] messages = new String[jsonArr.length()*3];
         int jlistIndex = 0;
         for(int i=0; i<jsonArr.length(); i++){
             JSONObject jsonObj = jsonArr.getJSONObject(i);
+            String sigRec = jsonObj.getString("sigrec");
             int fromID = jsonObj.getInt("sourceuserid");
-            String iv = jsonObj.getString("iv");
-            String cipher = jsonObj.getString("cipher");
-            String keyRecEnc = jsonObj.getString("keyrecenc");
-            String keyRec = c.decryptKeyRecipient(keyRecEnc,privKey);
-            messages[jlistIndex] = "Absender:" +fromID;
-            jlistIndex++;
-            messages[jlistIndex] = c.decryptMessage(cipher, keyRec, iv);
-            jlistIndex++;
+            JSONObject user = getUser(String.valueOf(fromID));
+            String pubKeySource = user.getString("pubkey");
+            try{
+                c.decryptSigRecipient(sigRec, pubKeySource);
+                String iv = jsonObj.getString("iv");
+                String cipher = jsonObj.getString("cipher");
+                String keyRecEnc = jsonObj.getString("keyrecenc");
+                String keyRec = c.decryptKeyRecipient(keyRecEnc,privKey);
+                messages[jlistIndex] = "Absender:" +fromID;
+                jlistIndex++;
+                messages[jlistIndex] = c.decryptMessage(cipher, keyRec, iv);
+                jlistIndex++;
+                messages[jlistIndex] = " ";
+                jlistIndex++;
+            }catch (Exception e){
+                messages[jlistIndex] = "[verfälschte Nachricht!]";
+                jlistIndex++;
+                messages[jlistIndex] = " ";
+                jlistIndex++;
+            }
+
         };
         return messages;
     }
