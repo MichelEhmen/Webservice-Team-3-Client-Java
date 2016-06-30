@@ -133,7 +133,7 @@ public class MessageWindow extends AppWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText()) == 200){
+                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText())){
                         JOptionPane.showMessageDialog(null, "Die Nachricht wurde abgeschickt.");
                     }else{
                         JOptionPane.showMessageDialog(null, "Die Nachricht konnte nicht abgeschickt werden.");

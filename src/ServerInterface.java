@@ -61,7 +61,7 @@ public class ServerInterface {
      * @return
      * @throws Exception
      */
-    public int register(String id, String password)throws Exception{
+    public boolean register(String id, String password)throws Exception{
         URL url = new URL(address + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
@@ -84,7 +84,11 @@ public class ServerInterface {
         wr.flush();
         int returnCode = httpCon.getResponseCode();
         httpCon.disconnect();
-        return returnCode;
+        if(returnCode==201){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     /**
@@ -97,7 +101,7 @@ public class ServerInterface {
      * @return
      * @throws Exception
      */
-    public int sendMessage(String id, String targetID, String message) throws Exception {
+    public boolean sendMessage(String id, String targetID, String message) throws Exception {
         //fertig
         JSONObject recipient = getUser(targetID);
         String pubKeyRecipient = recipient.getString("pubkey");
@@ -146,7 +150,12 @@ public class ServerInterface {
         wr.flush();
         int returnCode = httpCon.getResponseCode();
         httpCon.disconnect();
-        return returnCode;
+
+        if(returnCode==200){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     /**
