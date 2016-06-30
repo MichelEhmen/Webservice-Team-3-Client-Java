@@ -2,14 +2,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-public class RegisterWindow extends AppWindow{
+public class RegisterWindow extends AppWindow {
     private JTextField fldUserId;
     private JPasswordField fldPassword;
     private JButton btnRegister;
     private ServerInterface server;
     private JButton btnZurck;
 
-    public RegisterWindow(){
+    public RegisterWindow() {
         super();
         server = new ServerInterface();
 
@@ -76,14 +76,15 @@ public class RegisterWindow extends AppWindow{
         initButtons();
         this.setVisible(true);
     }
-    public void initButtons(){
+
+    public void initButtons() {
         btnRegister.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.register(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))){
+                    if (server.register(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         JOptionPane.showMessageDialog(null, "Die Registrierung war erfolgreich");
-                    }else{
+                    } else {
                         JOptionPane.showMessageDialog(null, "Die Registrierung war nicht erfolgreich");
                     }
                 } catch (Exception e1) {

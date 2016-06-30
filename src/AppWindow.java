@@ -6,7 +6,7 @@ public class AppWindow extends JFrame {
         initApplication();
     }
 
-    public void initApplication(){
+    public void initApplication() {
         //Default Werte für die JFrame Elemente
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setSize(450, 300);

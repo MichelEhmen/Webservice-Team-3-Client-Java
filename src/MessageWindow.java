@@ -107,7 +107,7 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        messages= new JList(server.receiveMessages(userID));
+        messages = new JList(server.receiveMessages(userID));
         scrollPane = new JScrollPane(messages);
         gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
@@ -120,7 +120,8 @@ public class MessageWindow extends AppWindow {
         initButtons();
         this.setVisible(true);
     }
-    public void initButtons(){
+
+    public void initButtons() {
         btnAusloggen.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -133,9 +134,9 @@ public class MessageWindow extends AppWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText())){
+                    if (server.sendMessage(userID, fldRecipientId.getText(), textField.getText())) {
                         JOptionPane.showMessageDialog(null, "Die Nachricht wurde abgeschickt.");
-                    }else{
+                    } else {
                         JOptionPane.showMessageDialog(null, "Die Nachricht konnte nicht abgeschickt werden.");
                     }
                 } catch (Exception e1) {
@@ -153,7 +154,7 @@ public class MessageWindow extends AppWindow {
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
-                scrollPane= new JScrollPane(messages);
+                scrollPane = new JScrollPane(messages);
                 getContentPane().add(scrollPane, gbc_scrollPane);
                 getContentPane().revalidate();
                 getContentPane().repaint();

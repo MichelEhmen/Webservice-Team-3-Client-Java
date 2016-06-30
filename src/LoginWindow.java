@@ -2,14 +2,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-public class LoginWindow extends AppWindow{
+public class LoginWindow extends AppWindow {
     private JTextField fldUserId;
     private JPasswordField fldPassword;
     private JButton btnLogin;
     private JButton btnZurck;
     private ServerInterface server;
 
-    public LoginWindow(){
+    public LoginWindow() {
         super();
         //Layout Elemente
         server = new ServerInterface();
@@ -80,17 +80,17 @@ public class LoginWindow extends AppWindow{
     //Den Buttons werden click-Events hinzugefügt.
     public void initButtons() {
 
-        btnLogin.addActionListener(new NewFrameActionListener(this){
+        btnLogin.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
                     //Wenn der User sich einloggen möchte, wird die Methode login()
                     // aus der ServerInterface Klasse aufgerufen. Die Parameter
                     // ID und Passwort werden aus den Textfeldern übernommen.
-                    if(server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
+                    if (server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         this.dispose();
                         new MessageWindow(fldUserId.getText());
-                    }else{
+                    } else {
                         JOptionPane.showMessageDialog(null, "Der Benutzer konnte nicht eingeloggt werden.");
                     }
                 } catch (Exception e1) {
@@ -99,7 +99,7 @@ public class LoginWindow extends AppWindow{
             }
         });
 
-        btnZurck.addActionListener(new NewFrameActionListener(this){
+        btnZurck.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 this.dispose();

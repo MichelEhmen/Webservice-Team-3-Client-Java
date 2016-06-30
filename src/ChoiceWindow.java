@@ -2,11 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-public class ChoiceWindow extends AppWindow{
+public class ChoiceWindow extends AppWindow {
     private JButton btnLogin;
     private JButton btnRegistrieren;
 
-    public ChoiceWindow(){
+    public ChoiceWindow() {
         super();
         //Layout Elemente
         GridBagLayout gridBagLayout = new GridBagLayout();
@@ -43,7 +43,7 @@ public class ChoiceWindow extends AppWindow{
 
 
     //Den Buttons werden click-Events hinzugefügt.
-    public void initButtons(){
+    public void initButtons() {
 
         btnLogin.addActionListener(new NewFrameActionListener(this) {
             @Override

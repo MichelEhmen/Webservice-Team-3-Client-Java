@@ -27,10 +27,10 @@ public class Crypt {
         System.out.println(maxKeyLen);
     }
 
-	/*
+    /*
     * Hier werden diverse Werte für die Nutzung in Verschlüsselungs- und Entschlüsselungsverfahren
-	* generiert. Diese werden zunächt in Bytes generiert und dann via Base64 enkodiert.
-	* */
+    * generiert. Diese werden zunächt in Bytes generiert und dann via Base64 enkodiert.
+    * */
     public String generateSaltmaster() {
         byte[] saltmasterBytes = new byte[64];
         RANDOM.nextBytes(saltmasterBytes);
