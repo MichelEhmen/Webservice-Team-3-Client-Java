@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+
 import org.json.*;
 
 
@@ -7,19 +8,20 @@ public class ServerInterface {
     private Crypt c = new Crypt();
     private String id;
     private static String privateKey;
-    private final String address = "http://localhost:3000/";
+    private final String address = "http://webservice-team-3.herokuapp.com/";
 
     /**
      * Die Anwendung bezieht saltmaster, pubkey und privKeyEnc von dem Dienstanbeiter auf Basis der angegebenen Identität.
      * Die Anwendung bildet masterkey mithilfe der PBKDF2 Funktion mit folgenden Parametern:
      * <ul>
-     *     <li>Algorithmus: sha-256 </li>
-     *     <li>Passwort: password</li>
-     *     <li>Salt: salt </li>
-     *     <li>Länge: 256 Bit</li>
-     *     <li>Iterationen: 10000</li>
+     * <li>Algorithmus: sha-256 </li>
+     * <li>Passwort: password</li>
+     * <li>Salt: salt </li>
+     * <li>Länge: 256 Bit</li>
+     * <li>Iterationen: 10000</li>
      * </ul>
      * Die Anwendung entschlüsselt privKeyEnc via AES-ECB-128 mit masterKey zu privateKey.
+     *
      * @param id
      * @param password
      * @return
@@ -27,15 +29,15 @@ public class ServerInterface {
      */
     public boolean login(String id, String password) throws Exception {
         try {
-        JSONObject json = getUser(id);
+            JSONObject json = getUser(id);
 
-        String salt = json.getString("saltmaster");
-        String pubKey = json.getString("pubkey"); //Nur für den Nachrichtenversandt.
-        String privKeyEnc = json.getString("privkeyenc");
+            String salt = json.getString("saltmaster");
+            String pubKey = json.getString("pubkey"); //Nur für den Nachrichtenversandt.
+            String privKeyEnc = json.getString("privkeyenc");
 
-        String masterKey = c.generateMasterkey(password, salt);
+            String masterKey = c.generateMasterkey(password, salt);
             privateKey = c.decryptPrivateKey(privKeyEnc, masterKey);
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -49,19 +51,20 @@ public class ServerInterface {
      * Die Anwendung erzeugt einen 64 Byte grossen Salt saltmaster aus Zufallszahlen.
      * Die Anwendung bildet masterkey mithilfe der PBKDF2 Funktion mit folgenden Parametern:
      * <ul>
-     *     <li>Algorithmus: sha-256</li>
-     *     <li>Passwort: password</li>
-     *     <li>Salt: saltmaster</li>
-     *     <li>Länge: 256 Bit</li>
-     *     <li>Iterationen: 10000</li>
+     * <li>Algorithmus: sha-256</li>
+     * <li>Passwort: password</li>
+     * <li>Salt: saltmaster</li>
+     * <li>Länge: 256 Bit</li>
+     * <li>Iterationen: 10000</li>
      * </ul>
      * Die Anwendung erzeugt ein RSA-2048 Schlüsselpaar privateKey, publicKey. Die Anwendung verschlüsselt privateKey via AES-ECB-128 mit masterkey zu privKeyEnc.
+     *
      * @param id
      * @param password
      * @return
      * @throws Exception
      */
-    public boolean register(String id, String password){
+    public boolean register(String id, String password) {
         try {
             URL url = new URL(address + id);
             HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -90,7 +93,7 @@ public class ServerInterface {
             } else {
                 return false;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -100,6 +103,7 @@ public class ServerInterface {
      * Die Anwednung sendet eine Nachricht mit den Anforderungen
      * aus der Vorlesung. Die Anforderungen sind aus 'kryptospec.pdf'
      * zu entnehmen
+     *
      * @param id
      * @param targetID
      * @param message
@@ -107,7 +111,6 @@ public class ServerInterface {
      * @throws Exception
      */
     public boolean sendMessage(String id, String targetID, String message) throws Exception {
-        //fertig
         try {
             JSONObject recipient = getUser(targetID);
             String pubKeyRecipient = recipient.getString("pubkey");
@@ -156,7 +159,8 @@ public class ServerInterface {
             } else {
                 return false;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -165,11 +169,12 @@ public class ServerInterface {
      * Die Anwednung empfängt alle Nachrichten mit den Anforderungen
      * aus der Vorlesung. Die Anforderungen sind aus 'kryptospec.pdf'
      * zu entnehmen
+     *
      * @param id
      * @return
      * @throws Exception
      */
-    public String[] receiveMessages(String id) throws Exception{
+    public String[] receiveMessages(String id) throws Exception {
         StringBuilder result = new StringBuilder();
         URL url = new URL(address + id + "/messages");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -178,10 +183,10 @@ public class ServerInterface {
         httpCon.setRequestProperty("Content-Type", "application/json");
         httpCon.setRequestProperty("Accept", "application/json");
 
-        long timestamp = System.currentTimeMillis()/1000L;
+        long timestamp = System.currentTimeMillis() / 1000L;
         String sigService = c.hashAndEncryptIdTime(id, timestamp, privateKey);
-//
-//      Anfrage zum Nachrichtenabruf
+
+        //Anfrage zum Nachrichtenabruf
         JSONObject messageRequest = new JSONObject();
         messageRequest.put("timeStamp", timestamp);
         messageRequest.put("sigService", sigService);
@@ -204,45 +209,46 @@ public class ServerInterface {
         }
 
         JSONArray jsonArr = new JSONArray(result.toString());
-        String[] messages = new String[jsonArr.length()*3];
+        String[] messages = new String[jsonArr.length() * 3];
         int jlistIndex = 0;
-        for(int i=0; i<jsonArr.length(); i++){
+        for (int i = 0; i < jsonArr.length(); i++) {
             JSONObject jsonObj = jsonArr.getJSONObject(i);
             String sigRec = jsonObj.getString("sigrec");
             int fromID = jsonObj.getInt("sourceuserid");
             JSONObject user = getUser(String.valueOf(fromID));
             String pubKeySource = user.getString("pubkey");
-            try{
+            try {
                 c.decryptSigRecipient(sigRec, pubKeySource);
                 String iv = jsonObj.getString("iv");
                 String cipher = jsonObj.getString("cipher");
                 String keyRecEnc = jsonObj.getString("keyrecenc");
-                String keyRec = c.decryptKeyRecipient(keyRecEnc,privateKey);
-                messages[jlistIndex] = "Absender:" +fromID;
+                String keyRec = c.decryptKeyRecipient(keyRecEnc, privateKey);
+                messages[jlistIndex] = "Absender:" + fromID;
                 jlistIndex++;
                 messages[jlistIndex] = c.decryptMessage(cipher, keyRec, iv);
                 jlistIndex++;
                 messages[jlistIndex] = " ";
                 jlistIndex++;
-            }catch (Exception e){
+            } catch (Exception e) {
                 messages[jlistIndex] = "[verfälschte Nachricht!]";
                 jlistIndex++;
                 messages[jlistIndex] = " ";
                 jlistIndex++;
             }
 
-        };
+        }
         return messages;
     }
 
     /**
      * Eine Hilfsmethode um die öffentlich Daten eines Users anhand seiner ID beim Server
      * anzufragen.
+     *
      * @param id
      * @return
      * @throws Exception
      */
-    public JSONObject getUser(String id) throws Exception{
+    public JSONObject getUser(String id) throws Exception {
         JSONObject json;
         StringBuilder result = new StringBuilder();
         URL url = new URL(address + id);
@@ -256,15 +262,15 @@ public class ServerInterface {
         rd.close();
         int returnCode = conn.getResponseCode();
         conn.disconnect();
-        if(returnCode==200){
+        if (returnCode == 200) {
             json = new JSONObject(result.toString());
-        }else{
+        } else {
             json = new JSONObject();
         }
         return json;
     }
 
-    public void logout(){
+    public void logout() {
         privateKey = "";
     }
 }

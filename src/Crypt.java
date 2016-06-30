@@ -31,7 +31,6 @@ public class Crypt {
     * Hier werden diverse Werte für die Nutzung in Verschlüsselungs- und Entschlüsselungsverfahren
 	* generiert. Diese werden zunächt in Bytes generiert und dann via Base64 enkodiert.
 	* */
-
     public String generateSaltmaster() {
         byte[] saltmasterBytes = new byte[64];
         RANDOM.nextBytes(saltmasterBytes);
@@ -73,7 +72,6 @@ public class Crypt {
 
         return privateKeyString;
     }
-
 
     public String generateMasterkey(String password, String saltmaster) throws Exception {
         if (password != null && saltmaster != null) {
