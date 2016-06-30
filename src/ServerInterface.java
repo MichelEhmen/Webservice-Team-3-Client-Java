@@ -7,6 +7,7 @@ public class ServerInterface {
     private Crypt c = new Crypt();
     private String id;
     private String privateKey;
+    private final String address = "http://webservice-team-3.herokuapp.com/";
 
     public boolean login(String id, String password) throws Exception {
         JSONObject json = getUser(id);
@@ -27,7 +28,7 @@ public class ServerInterface {
     }
 
     public int register(String id, String password)throws Exception{
-        URL url = new URL("http://127.0.0.1:3000/" + id);
+        URL url = new URL(address + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
         httpCon.setRequestMethod("POST");
@@ -57,7 +58,7 @@ public class ServerInterface {
         JSONObject recipient = getUser(targetID);
         String pubKeyRecipient = recipient.getString("pubkey");
 
-        URL url = new URL("http://127.0.0.1:3000/" + id +"/message");
+        URL url = new URL(address + id +"/message");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
         httpCon.setRequestMethod("POST");
@@ -106,7 +107,7 @@ public class ServerInterface {
 
     public String[] receiveMessages(String id, String privKey) throws Exception{
         StringBuilder result = new StringBuilder();
-        URL url = new URL("http://127.0.0.1:3000/" + id + "/messages");
+        URL url = new URL(address + id + "/messages");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
         httpCon.setDoOutput(true);
         httpCon.setRequestMethod("POST");
@@ -172,7 +173,7 @@ public class ServerInterface {
 
     public JSONObject getUser(String id) throws Exception{
         StringBuilder result = new StringBuilder();
-        URL url = new URL("http://127.0.0.1:3000/" + id);
+        URL url = new URL(address + id);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
