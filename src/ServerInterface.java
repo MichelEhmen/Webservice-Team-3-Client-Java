@@ -26,6 +26,7 @@ public class ServerInterface {
      * @throws Exception
      */
     public boolean login(String id, String password) throws Exception {
+        try {
         JSONObject json = getUser(id);
 
         String salt = json.getString("saltmaster");
@@ -33,10 +34,9 @@ public class ServerInterface {
         String privKeyEnc = json.getString("privkeyenc");
 
         String masterKey = c.generateMasterkey(password, salt);
-
-        try {
             privateKey = c.decryptPrivateKey(privKeyEnc, masterKey);
         }catch(Exception e){
+            e.printStackTrace();
             return false;
         }
         this.id = id;
@@ -61,32 +61,37 @@ public class ServerInterface {
      * @return
      * @throws Exception
      */
-    public boolean register(String id, String password)throws Exception{
-        URL url = new URL(address + id);
-        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        httpCon.setDoOutput(true);
-        httpCon.setRequestMethod("POST");
-        httpCon.setRequestProperty("Content-Type", "application/json");
-        httpCon.setRequestProperty("Accept", "application/json");
+    public boolean register(String id, String password){
+        try {
+            URL url = new URL(address + id);
+            HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+            httpCon.setDoOutput(true);
+            httpCon.setRequestMethod("POST");
+            httpCon.setRequestProperty("Content-Type", "application/json");
+            httpCon.setRequestProperty("Accept", "application/json");
 
-        c.generateKeyPair();
-        String privateKey = c.getPrivateKey();
-        String saltmaster = c.generateSaltmaster();
-        String masterKey = c.generateMasterkey(password, saltmaster);
-        String publicKey = c.getPublicKey();
+            c.generateKeyPair();
+            String privateKey = c.getPrivateKey();
+            String saltmaster = c.generateSaltmaster();
+            String masterKey = c.generateMasterkey(password, saltmaster);
+            String publicKey = c.getPublicKey();
 
-        JSONObject user = new JSONObject();
-        user.put("saltMaster", saltmaster);
-        user.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
-        user.put("pubKey", publicKey);
-        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
-        wr.write(user.toString());
-        wr.flush();
-        int returnCode = httpCon.getResponseCode();
-        httpCon.disconnect();
-        if(returnCode==201){
-            return true;
-        }else{
+            JSONObject user = new JSONObject();
+            user.put("saltMaster", saltmaster);
+            user.put("privKeyEnc", c.encryptPrivateKey(privateKey, masterKey));
+            user.put("pubKey", publicKey);
+            OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+            wr.write(user.toString());
+            wr.flush();
+            int returnCode = httpCon.getResponseCode();
+            httpCon.disconnect();
+            if (returnCode == 201) {
+                return true;
+            } else {
+                return false;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
             return false;
         }
     }
@@ -103,57 +108,55 @@ public class ServerInterface {
      */
     public boolean sendMessage(String id, String targetID, String message) throws Exception {
         //fertig
-        JSONObject recipient = getUser(targetID);
-        String pubKeyRecipient = recipient.getString("pubkey");
+        try {
+            JSONObject recipient = getUser(targetID);
+            String pubKeyRecipient = recipient.getString("pubkey");
 
-        URL url = new URL(address + id +"/message");
-        HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-        httpCon.setDoOutput(true);
-        httpCon.setRequestMethod("POST");
-        httpCon.setRequestProperty("Content-Type", "application/json");
-        httpCon.setRequestProperty("Accept", "application/json");
+            URL url = new URL(address + id + "/message");
+            HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+            httpCon.setDoOutput(true);
+            httpCon.setRequestMethod("POST");
+            httpCon.setRequestProperty("Content-Type", "application/json");
+            httpCon.setRequestProperty("Accept", "application/json");
 
-        long timestamp = System.currentTimeMillis()/1000L;
-        String keyRecipient = c.generateKeyRecipient();
-        String iv = c.generateIv();
-        String cipher = c.encryptMessage(message, keyRecipient, iv);
-        String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
-        String sigRecipient = c.hashAndEncryptSigRecipient(id, cipher, iv, keyRecipient, privateKey);
+            long timestamp = System.currentTimeMillis() / 1000L;
+            String keyRecipient = c.generateKeyRecipient();
+            String iv = c.generateIv();
+            String cipher = c.encryptMessage(message, keyRecipient, iv);
+            String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
+            String sigRecipient = c.hashAndEncryptSigRecipient(id, cipher, iv, keyRecipient, privateKey);
 
-        JSONObject innerEnvelope = new JSONObject();
-        innerEnvelope.put("sourceUserID", id);
-        innerEnvelope.put("cipher", cipher);
-        innerEnvelope.put("iv", iv);
-        innerEnvelope.put("keyRecEnc", keyRecipientEnc);
-        innerEnvelope.put("sigRec", sigRecipient);
+            JSONObject innerEnvelope = new JSONObject();
+            innerEnvelope.put("sourceUserID", id);
+            innerEnvelope.put("cipher", cipher);
+            innerEnvelope.put("iv", iv);
+            innerEnvelope.put("keyRecEnc", keyRecipientEnc);
+            innerEnvelope.put("sigRec", sigRecipient);
 
 
+            String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
 
-        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
+            JSONObject messageJs = new JSONObject();
+            messageJs.put("targetUserID", targetID);
+            messageJs.put("cipher", cipher);
+            messageJs.put("iv", iv);
+            messageJs.put("keyRecEnc", keyRecipientEnc);
+            messageJs.put("sigRec", sigRecipient);
+            messageJs.put("sigService", sigService);
+            messageJs.put("timestamp", timestamp);
 
-//        String mockCipher = message;
-//        String mockKeyRecipientEnc = "324232342";
-//        String mockSigRec = "0287548243";
-//        String mockSigService = "2zd203d";
+            OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
+            wr.write(messageJs.toString());
+            wr.flush();
+            int returnCode = httpCon.getResponseCode();
+            httpCon.disconnect();
 
-        JSONObject messageJs = new JSONObject();
-        messageJs.put("targetUserID", targetID);
-        messageJs.put("cipher", cipher);
-        messageJs.put("iv", iv);
-        messageJs.put("keyRecEnc", keyRecipientEnc);
-        messageJs.put("sigRec", sigRecipient);
-        messageJs.put("sigService", sigService);
-        messageJs.put("timestamp", timestamp);
-
-        OutputStreamWriter wr = new OutputStreamWriter(httpCon.getOutputStream());
-        wr.write(messageJs.toString());
-        wr.flush();
-        int returnCode = httpCon.getResponseCode();
-        httpCon.disconnect();
-
-        if(returnCode==200){
-            return true;
-        }else{
+            if (returnCode == 200) {
+                return true;
+            } else {
+                return false;
+            }
+        }catch (Exception e){
             return false;
         }
     }
@@ -240,6 +243,7 @@ public class ServerInterface {
      * @throws Exception
      */
     public JSONObject getUser(String id) throws Exception{
+        JSONObject json;
         StringBuilder result = new StringBuilder();
         URL url = new URL(address + id);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -250,7 +254,13 @@ public class ServerInterface {
             result.append(line);
         }
         rd.close();
-        JSONObject json = new JSONObject(result.toString());
+        int returnCode = conn.getResponseCode();
+        conn.disconnect();
+        if(returnCode==200){
+            json = new JSONObject(result.toString());
+        }else{
+            json = new JSONObject();
+        }
         return json;
     }
 
