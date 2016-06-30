@@ -5,24 +5,22 @@ import java.util.ArrayList;
 
 
 public class MessageWindow extends AppWindow {
-    ServerInterface server;
-    JButton btnAbsenden;
-    JButton btnAusloggen;
-    JButton btnAktualisieren;
+    private ServerInterface server;
+    private JButton btnAbsenden;
+    private JButton btnAusloggen;
+    private JButton btnAktualisieren;
     private JTextField fldRecipientId;
     private JTextField textField;
-    String userID;
-    String privateKey;
-    JList<String> messages;
-    JScrollPane scrollPane;
-    GridBagConstraints gbc_scrollPane;
+    private String userID;
+    private JList<String> messages;
+    private JScrollPane scrollPane;
+    private GridBagConstraints gbc_scrollPane;
 
 
-    public MessageWindow(String privateKey, String userID) throws Exception {
+    public MessageWindow(String userID) throws Exception {
         super();
         server = new ServerInterface();
         this.userID = userID;
-        this.privateKey = privateKey;
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{0, 104, 236, 0};
@@ -109,7 +107,7 @@ public class MessageWindow extends AppWindow {
         gbc_lblPosteingang.gridy = 3;
         getContentPane().add(lblPosteingang, gbc_lblPosteingang);
 
-        messages= new JList(server.receiveMessages(userID, privateKey));
+        messages= new JList(server.receiveMessages(userID));
         scrollPane = new JScrollPane(messages);
         gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.gridheight = 2;
@@ -126,6 +124,7 @@ public class MessageWindow extends AppWindow {
         btnAusloggen.addActionListener(new NewFrameActionListener(this) {
             @Override
             public void actionPerformed(ActionEvent e) {
+                server.logout();
                 dispose();
                 new LoginWindow();
             }
@@ -134,7 +133,7 @@ public class MessageWindow extends AppWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText(), privateKey) == 200){
+                    if(server.sendMessage(userID,fldRecipientId.getText(), textField.getText()) == 200){
                         JOptionPane.showMessageDialog(null, "Die Nachricht wurde abgeschickt.");
                     }else{
                         JOptionPane.showMessageDialog(null, "Die Nachricht konnte nicht abgeschickt werden.");
@@ -150,7 +149,7 @@ public class MessageWindow extends AppWindow {
 
                 getContentPane().remove(scrollPane);
                 try {
-                    messages = new JList(server.receiveMessages(userID, privateKey));
+                    messages = new JList(server.receiveMessages(userID));
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }

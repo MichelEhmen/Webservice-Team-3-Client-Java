@@ -89,7 +89,7 @@ public class LoginWindow extends AppWindow{
                     // ID und Passwort werden aus den Textfeldern übernommen.
                     if(server.login(fldUserId.getText(), String.valueOf(fldPassword.getPassword()))) {
                         this.dispose();
-                        new MessageWindow(server.getPrivateKey(), fldUserId.getText());
+                        new MessageWindow(fldUserId.getText());
                     }else{
                         JOptionPane.showMessageDialog(null, "Der Benutzer konnte nicht eingeloggt werden.");
                     }

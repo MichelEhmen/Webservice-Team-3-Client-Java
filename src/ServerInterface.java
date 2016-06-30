@@ -6,9 +6,25 @@ import org.json.*;
 public class ServerInterface {
     private Crypt c = new Crypt();
     private String id;
-    private String privateKey;
-    private final String address = "http://webservice-team-3.herokuapp.com/";
+    private static String privateKey;
+    private final String address = "http://localhost:3000/";
 
+    /**
+     * Die Anwendung bezieht saltmaster, pubkey und privKeyEnc von dem Dienstanbeiter auf Basis der angegebenen Identität.
+     * Die Anwendung bildet masterkey mithilfe der PBKDF2 Funktion mit folgenden Parametern:
+     * <ul>
+     *     <li>Algorithmus: sha-256 </li>
+     *     <li>Passwort: password</li>
+     *     <li>Salt: salt </li>
+     *     <li>Länge: 256 Bit</li>
+     *     <li>Iterationen: 10000</li>
+     * </ul>
+     * Die Anwendung entschlüsselt privKeyEnc via AES-ECB-128 mit masterKey zu privateKey.
+     * @param id
+     * @param password
+     * @return
+     * @throws Exception
+     */
     public boolean login(String id, String password) throws Exception {
         JSONObject json = getUser(id);
 
@@ -27,6 +43,24 @@ public class ServerInterface {
         return true;
     }
 
+    /**
+     * Der Benutzer wählt eine Identität.
+     * Der Benutzer wählt ein Passwort.
+     * Die Anwendung erzeugt einen 64 Byte grossen Salt saltmaster aus Zufallszahlen.
+     * Die Anwendung bildet masterkey mithilfe der PBKDF2 Funktion mit folgenden Parametern:
+     * <ul>
+     *     <li>Algorithmus: sha-256</li>
+     *     <li>Passwort: password</li>
+     *     <li>Salt: saltmaster</li>
+     *     <li>Länge: 256 Bit</li>
+     *     <li>Iterationen: 10000</li>
+     * </ul>
+     * Die Anwendung erzeugt ein RSA-2048 Schlüsselpaar privateKey, publicKey. Die Anwendung verschlüsselt privateKey via AES-ECB-128 mit masterkey zu privKeyEnc.
+     * @param id
+     * @param password
+     * @return
+     * @throws Exception
+     */
     public int register(String id, String password)throws Exception{
         URL url = new URL(address + id);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -53,7 +87,17 @@ public class ServerInterface {
         return returnCode;
     }
 
-    public int sendMessage(String id, String targetID, String message, String privKey) throws Exception {
+    /**
+     * Die Anwednung sendet eine Nachricht mit den Anforderungen
+     * aus der Vorlesung. Die Anforderungen sind aus 'kryptospec.pdf'
+     * zu entnehmen
+     * @param id
+     * @param targetID
+     * @param message
+     * @return
+     * @throws Exception
+     */
+    public int sendMessage(String id, String targetID, String message) throws Exception {
         //fertig
         JSONObject recipient = getUser(targetID);
         String pubKeyRecipient = recipient.getString("pubkey");
@@ -70,7 +114,7 @@ public class ServerInterface {
         String iv = c.generateIv();
         String cipher = c.encryptMessage(message, keyRecipient, iv);
         String keyRecipientEnc = c.encryptKeyRecipient(keyRecipient, pubKeyRecipient);
-        String sigRecipient = c.hashAndEncryptSigRecipient(id, cipher, iv, keyRecipient, privKey);
+        String sigRecipient = c.hashAndEncryptSigRecipient(id, cipher, iv, keyRecipient, privateKey);
 
         JSONObject innerEnvelope = new JSONObject();
         innerEnvelope.put("sourceUserID", id);
@@ -81,7 +125,7 @@ public class ServerInterface {
 
 
 
-        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privKey);
+        String sigService = c.hashAndEncryptSigService(targetID, timestamp, innerEnvelope, privateKey);
 
 //        String mockCipher = message;
 //        String mockKeyRecipientEnc = "324232342";
@@ -105,7 +149,15 @@ public class ServerInterface {
         return returnCode;
     }
 
-    public String[] receiveMessages(String id, String privKey) throws Exception{
+    /**
+     * Die Anwednung empfängt alle Nachrichten mit den Anforderungen
+     * aus der Vorlesung. Die Anforderungen sind aus 'kryptospec.pdf'
+     * zu entnehmen
+     * @param id
+     * @return
+     * @throws Exception
+     */
+    public String[] receiveMessages(String id) throws Exception{
         StringBuilder result = new StringBuilder();
         URL url = new URL(address + id + "/messages");
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
@@ -115,7 +167,7 @@ public class ServerInterface {
         httpCon.setRequestProperty("Accept", "application/json");
 
         long timestamp = System.currentTimeMillis()/1000L;
-        String sigService = c.hashAndEncryptIdTime(id, timestamp, privKey);
+        String sigService = c.hashAndEncryptIdTime(id, timestamp, privateKey);
 //
 //      Anfrage zum Nachrichtenabruf
         JSONObject messageRequest = new JSONObject();
@@ -127,7 +179,7 @@ public class ServerInterface {
 
         int HttpResult = httpCon.getResponseCode();
         if (HttpResult == HttpURLConnection.HTTP_OK) {
-        //Nachrichten werden vom Server abgerufen
+            //Nachrichten werden vom Server abgerufen
             BufferedReader rd = new BufferedReader(new InputStreamReader(httpCon.getInputStream()));
             String line;
             while ((line = rd.readLine()) != null) {
@@ -153,7 +205,7 @@ public class ServerInterface {
                 String iv = jsonObj.getString("iv");
                 String cipher = jsonObj.getString("cipher");
                 String keyRecEnc = jsonObj.getString("keyrecenc");
-                String keyRec = c.decryptKeyRecipient(keyRecEnc,privKey);
+                String keyRec = c.decryptKeyRecipient(keyRecEnc,privateKey);
                 messages[jlistIndex] = "Absender:" +fromID;
                 jlistIndex++;
                 messages[jlistIndex] = c.decryptMessage(cipher, keyRec, iv);
@@ -171,6 +223,13 @@ public class ServerInterface {
         return messages;
     }
 
+    /**
+     * Eine Hilfsmethode um die öffentlich Daten eines Users anhand seiner ID beim Server
+     * anzufragen.
+     * @param id
+     * @return
+     * @throws Exception
+     */
     public JSONObject getUser(String id) throws Exception{
         StringBuilder result = new StringBuilder();
         URL url = new URL(address + id);
@@ -186,7 +245,7 @@ public class ServerInterface {
         return json;
     }
 
-    public String getPrivateKey(){
-        return privateKey;
+    public void logout(){
+        privateKey = "";
     }
 }

@@ -3,11 +3,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 public class RegisterWindow extends AppWindow{
-    JTextField fldUserId;
-    JPasswordField fldPassword;
-    JButton btnRegister;
-    ServerInterface server;
-    JButton btnZurck;
+    private JTextField fldUserId;
+    private JPasswordField fldPassword;
+    private JButton btnRegister;
+    private ServerInterface server;
+    private JButton btnZurck;
 
     public RegisterWindow(){
         super();

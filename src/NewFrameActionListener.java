@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
  */
 public class NewFrameActionListener implements ActionListener{
 
-    JFrame frame;
+    private JFrame frame;
     NewFrameActionListener(JFrame oldframe){
         frame = oldframe;
     }
